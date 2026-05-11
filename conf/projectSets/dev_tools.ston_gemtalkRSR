@@ -1,0 +1,57 @@
+GDKProjectSet {
+	#name : 'dev_tools',
+	#parentRegistryName : 'jupiter.local',
+	#comment : 'Adding J4P, Sparkle and GT IDE support',
+	#loadSpecs : {
+		'RemoteServiceReplication' : {
+			'revision' : 'main-v2',
+			'gitUrls' : {
+				'origin' : 'git@github.com:GemTalk/RemoteServiceReplication.git'
+			}
+		},
+		'RowanClientServicesV3' : {
+			'projectName' : 'RowanClientServices',
+			'revision' : 'main374',
+			'gitUrls' : {
+				'origin' : 'git@github.com:GemTalk/RowanClientServices.git'
+			}
+		},
+		'PharoGemStoneFFI' : {
+			'revision' : 'main',
+			'gitUrls' : {
+				'origin' : 'git@github.com:GemTalk/PharoGemStoneFFI.git'
+			}
+		},
+		'Sparkle' : {
+			'revision' : 'main',
+			'gitUrls' : {
+				'origin' : 'git@github.com:GemTalk/Sparkle.git'
+			}
+		},
+		'JadeiteForPharo' : {
+			'revision' : 'main374',
+			'gitUrls' : {
+				'origin' : 'git@github.com:GemTalk/JadeiteForPharo.git'
+			}
+		},
+		'gtoolkit-wireencoding' : {
+			'revision' : 'release',
+			'gitUrls' : {
+				'origin' : 'git@github.com:feenkcom/gtoolkit-wireencoding.git'
+			}
+		},
+		'gtoolkit-remote' : {
+			'revision' : 'release',
+			'gitUrls' : {
+				'origin' : 'git@github.com:feenkcom/gtoolkit-remote.git'
+			}
+		},
+		'gt4gemstone' : {
+			'revision' : 'release',
+			'gitUrls' : {
+				'origin' : 'git@github.com:feenkcom/gt4gemstone.git'
+			}
+		}
+	},
+	#projectDirectory : '/opt/GsDevKit/jupiter.local/git'
+}
