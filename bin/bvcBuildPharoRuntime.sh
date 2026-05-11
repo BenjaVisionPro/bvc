@@ -1,4 +1,4 @@
-#! /usr/bin/env sh
+#!/usr/bin/env bash
 set -eu
 
 PROGNAME=$0
@@ -92,4 +92,4 @@ spinner_stop
 # ---------------------------------------------------------
 information_banner "Pharo installed at: ${INSTALL_DIR}"
 [ -x "./pharo-ui" ] && information_banner "Launcher: ${INSTALL_DIR}/pharo-ui"
-exit_0_banner "Pharo setup complete"
+exit_0_banner "Pharo build complete"

@@ -1,4 +1,4 @@
-#! /usr/bin/env sh
+#!/usr/bin/env bash
 set -eu
 
 PROGNAME=$0
@@ -52,7 +52,7 @@ done
 # ----------------------------------------
 if [ -z "${STONES_HOME:-}" ] || [ ! -d "${STONES_HOME:-/nonexistent}" ]; then
   error_banner "STONES_HOME is not set or does not exist."
-  exit_1_banner "Run 'bvc init' (or setupGsDevKit_stones.sh) before initializing a registry."
+  exit_1_banner "Run setupGsDevKit_stones.sh before initializing a registry."
 fi
 
 # ----------------------------------------

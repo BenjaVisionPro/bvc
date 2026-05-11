@@ -16,38 +16,32 @@ load_bvc_config() {
   : "${SCRIPT_DIR:?SCRIPT_DIR must be set before calling load_bvc_config}"
 
   # 2) Local overrides in CWD (*.bvc)
-  set +f
   for f in "$PWD"/*.bvc; do
     [ -r "$f" ] && . "$f"
   done
-  set -f
 
   # 3) Resolve BVC_CONF_DIR (default: ./conf relative to CWD)
   : "${BVC_CONF_DIR:=conf}"
   case "$BVC_CONF_DIR" in
-    /*) conf_root="$BVC_CONF_DIR" ;;
-    ~)  conf_root="$HOME" ;;
+    /*)  conf_root="$BVC_CONF_DIR" ;;
+    ~)   conf_root="$HOME" ;;
     ~/*) conf_root="$HOME/${BVC_CONF_DIR#~/}" ;;
-    *)  conf_root="$PWD/$BVC_CONF_DIR" ;;
+    *)   conf_root="$PWD/$BVC_CONF_DIR" ;;
   esac
 
-  # Expose resolved config dir to all scripts
   CONF_DIR="$conf_root"
 
-  # 3b) User defaults (if present)
   if [ -r "$conf_root/bvc/bvc_defaults" ]; then
     . "$conf_root/bvc/bvc_defaults"
   fi
 
-  # 4) Bundled defaults (shipped with toolkit)
   bundled_conf="${SCRIPT_DIR}/../conf/bvc/bvc_defaults"
   [ -r "$bundled_conf" ] && . "$bundled_conf"
 
-  # 5) Safety net (only if still unset after all layers)
   : "${DEFAULT_REGISTRY:=bvc}"
   : "${GSDEVKIT_STONES_DIR:=stones}"
-  : "${PROJECTS_ROOT:=git_root}"         # NEW: Top-level root for all project-set dirs
-  : "${GEMSTONE_VERSION:=3.7.4.3}"
+  : "${PROJECTS_ROOT:=git_root}"
+  : "${GEMSTONE_VERSION:=3.7.5}"
   : "${GEMSTONE_STONE_NAME:=bvc_dev}"
   : "${GT_INSTALL_DIR:=BVCDevKit}"
   : "${GT_APP_NAME:=BVCDevKit}"
@@ -58,7 +52,6 @@ load_bvc_config() {
   : "${PHARO_VERSION:=130}"
 }
 
-# Resolve a config file with user override (CONF_DIR) first, then bundled fallback.
 conf_resolve() {
   : "${CONF_DIR:?CONF_DIR must be set (call load_bvc_config first)}"
   rel="$1"
@@ -95,44 +88,19 @@ path_from_script() {
   esac
 }
 
-#===============================================
-# Projects root / per-set helpers
-#===============================================
-projects_root() {
-  # Absolute path to the root under which all project-set dirs live
-  abs_from_cwd "${PROJECTS_ROOT}"
-}
-
-project_set_dir() {
-  # Usage: project_set_dir <setName>
-  # e.g., "projects" -> "<projects_root>/projects"
-  _set="$1"
-  printf %s "$(projects_root)/${_set}"
-}
-
-set_rowan_home_for_projects() {
-  # Export ROWAN_PROJECTS_HOME for the "projects" set (user repos)
-  export ROWAN_PROJECTS_HOME="$(project_set_dir projects)"
-}
-
-ensure_dir() {
-  # mkdir -p wrapper with a friendly banner
-  _d="$1"
-  [ -d "${_d}" ] || { information_banner "Creating directory: ${_d}"; mkdir -p "${_d}"; }
-}
+projects_root() { abs_from_cwd "${PROJECTS_ROOT}"; }
+project_set_dir() { printf %s "$(projects_root)/${1}"; }
+set_rowan_home_for_projects() { export ROWAN_PROJECTS_HOME="$(project_set_dir projects)"; }
+ensure_dir() { _d="$1"; [ -d "${_d}" ] || { information_banner "Creating directory: ${_d}"; mkdir -p "${_d}"; }; }
 
 #===============================================
-# Feedback & Utilities (POSIX sh)
+# Feedback & Utilities
 #===============================================
-# Check that a tool exists. eg. need git
 need() { command -v "$1" >/dev/null 2>&1 || { error_banner "Missing required tool: $1"; exit 1; }; }
 
 _should_color() {
-  # Explicit opt-out per https://no-color.org/
   [ -n "${NO_COLOR-}" ] && return 1
-  # Explicit opt-in override
   [ "${BVC_FORCE_COLOR-}" = "1" ] && return 0
-  # TTY + not a "dumb" term
   [ -t 2 ] || return 1
   [ "${TERM-}" = "dumb" ] && return 1
   return 0
@@ -140,19 +108,14 @@ _should_color() {
 
 if _should_color; then
   ANSI_RESET="$(printf '\033[0m')"
-  # Darker slate-grey blue for banners / info
   ANSI_BLUE="$(printf '\033[38;5;67m')"
-  # Calmer green, closer to natural foliage
   ANSI_GREEN="$(printf '\033[38;5;101m')"
-  # Warm grey-beige for warnings
   ANSI_YELLOW="$(printf '\033[38;5;144m')"
-  # Subtle brick red for errors
   ANSI_RED="$(printf '\033[38;5;131m')"
 else
   ANSI_RED=''; ANSI_GREEN=''; ANSI_YELLOW=''; ANSI_BLUE=''; ANSI_RESET=''
 fi
 
-# Script name (portable)
 prog_basename() { bn="$1"; bn=${bn##*/}; printf %s "$bn"; }
 
 exit_1_banner() {
@@ -181,7 +144,6 @@ information_banner() { printf "%s%s%s\n" "${ANSI_BLUE}" "$1" "${ANSI_RESET}" 1>&
 warning_banner()     { printf "%s%s%s\n" "${ANSI_YELLOW}" "$1" "${ANSI_RESET}" 1>&2; }
 error_banner()       { printf "%s%s%s\n" "${ANSI_RED}" "$1" "${ANSI_RESET}" 1>&2; }
 
-# Error/INT traps (POSIX)
 interrupted() {
   lineno="$1"
   printf "%s^C detected (line %s) :: %s%s\n" "${ANSI_YELLOW}" "${lineno}" "$(prog_basename "$0")" "${ANSI_RESET}" 1>&2
@@ -193,83 +155,134 @@ error() {
   exit_1_banner "Error on or near line ${lineno}"
 }
 
-# Cursor control (best-effort)
-_have_tput=false
-command -v tput >/dev/null 2>&1 && _have_tput=true
-
 #===============================================
 # Spinner
 #===============================================
 spinner_pid=
 
 spinner_start() {
-  local LC_CTYPE=C
   local spin='⣾⣽⣻⢿⡿⣟⣯⣷'
   local charwidth=3
   local i=0
-  tput civis # cursor invisible
-
-  { while : ; do i=$(((i + $charwidth) % ${#spin})) ; printf "%s" "$1 ${spin:$i:$charwidth}" ; printf "\r" ; sleep 0.1 ; done  & } 2>/dev/null
+  tput civis 2>/dev/null || true
+  { while : ; do i=$(((i + charwidth) % ${#spin})) ; printf "%s" "$1 ${spin:i:charwidth}" ; printf "\r" ; sleep 0.1 ; done & } 2>/dev/null
   spinner_pid=$!
 }
 
 spinner_stop() {
   if [ -n "${spinner_pid:-}" ]; then
-    { kill "$spinner_pid" && wait "$spinner_pid"; } 2>/dev/null || :
+    { kill "$spinner_pid" && wait "$spinner_pid"; } 2>/dev/null || true
     spinner_pid=
-    printf '\033[2K\r' 2>/dev/null || :
-    tput cnorm 2>/dev/null || : # reset cursor
+    printf '\033[2K\r' 2>/dev/null || true
+    tput cnorm 2>/dev/null || true
   fi
 }
 trap spinner_stop EXIT
 
 #===============================================
-# Architecture
+# Platform / architecture
 #===============================================
 platform=
 architecture=
 
 set_platform_and_architecture() {
-  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    arch_name="$(uname -m)"
-    platform="Linux"
-    if [ "${arch_name}" = "x86_64" ]; then
-      architecture="Linux64"
-    elif [ "${arch_name}" = "aarch64" ]; then
-      architecture="LinuxArm64"
-    else
-      warning_banner "$arch_name architecture is unsupported."
-      exit 1
-    fi
-  elif [[ "$OSTYPE" == "darwin"* ]]; then
-    platform="Mac"
-    arch_name="$(uname -m)"
-    is_m1=false
-    if [ "${arch_name}" = "x86_64" ]; then
-      if [ "$(sysctl -in sysctl.proc_translated)" = "1" ]; then
+  uname_s="$(uname -s 2>/dev/null || echo unknown)"
+  case "$uname_s" in
+    Linux)
+      arch_name="$(uname -m)"
+      platform="Linux"
+      case "$arch_name" in
+        x86_64)  architecture="Linux64" ;;
+        aarch64) architecture="LinuxArm64" ;;
+        *) exit_1_banner "$arch_name architecture is unsupported." ;;
+      esac
+      ;;
+    Darwin)
+      platform="Mac"
+      arch_name="$(uname -m)"
+      is_m1=false
+      if [ "$arch_name" = "x86_64" ]; then
+        if [ "$(sysctl -in sysctl.proc_translated 2>/dev/null || echo 0)" = "1" ]; then
+          is_m1=true
+        fi
+      elif [ "$arch_name" = "arm64" ]; then
         is_m1=true
       fi
-    elif [ "${arch_name}" = "arm64" ]; then
-      is_m1=true
-    fi
-    if [[ "$is_m1" == true ]]; then
-      architecture="OSXM1"
-    else
-      architecture="OSX64"
-    fi
-  elif [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
-    platform="Win"
-    architecture="Win64"
-    # TODO: WinArm64
+      if [ "$is_m1" = true ]; then
+        architecture="OSXM1"
+      else
+        architecture="OSX64"
+      fi
+      ;;
+    MINGW*|MSYS*|CYGWIN*)
+      platform="Win"
+      architecture="Win64"
+      ;;
+    *)
+      exit_1_banner "$uname_s is unsupported. Use macOS, Linux, or WSL."
+      ;;
+  esac
+}
+
+bvc_require_supported_platform() {
+  uname_s="$(uname -s 2>/dev/null || echo unknown)"
+  case "$uname_s" in
+    Darwin|Linux) return 0 ;;
+    MINGW*|MSYS*|CYGWIN*) exit_1_banner "Native Windows shells are not supported. Use WSL/Linux on Windows." ;;
+    *) exit_1_banner "$uname_s is unsupported. Use macOS, Linux, or WSL." ;;
+  esac
+}
+
+#===============================================
+# GsDevKit / registry / install checks
+#===============================================
+gsdevkit_installed() {
+  command -v versionReport.solo >/dev/null 2>&1 || return 1
+  [ -n "${STONES_HOME:-}" ] && [ -d "$STONES_HOME" ] || return 1
+}
+
+ensure_gsdevkit_ready() {
+  bvc_require_supported_platform
+  if gsdevkit_installed; then
+    information_banner "GsDevKit found (STONES_HOME=${STONES_HOME:-unset})."
   else
-    warning_banner "$OSTYPE is unsupported."
-    exit 1
+    information_banner "GsDevKit not found; bootstrapping."
+    "${SCRIPT_DIR}/setupGsDevKit_stones.sh"
   fi
 }
 
-# Global traps installed by callers (don’t exit here)
+registry_exists() {
+  name="$1"
+  registryReport.solo --registry="$name" >/dev/null 2>&1
+}
+
+ensure_registry_exists() {
+  name="$1"
+  if registry_exists "$name"; then
+    information_banner "GsDevKit registry '${name}' already exists."
+  else
+    information_banner "Initialising GsDevKit registry '${name}'."
+    "${SCRIPT_DIR}/initRegistry.sh" "$name"
+  fi
+}
+
+deployment_exists() {
+  registry="$1"
+  deployment="$2"
+  registryReport.solo --registry="$registry" --stone="$deployment" >/dev/null 2>&1
+}
+
+gt_installed() {
+  gt_dir="$(abs_from_cwd "${GT_INSTALL_DIR}")"
+  [ -e "${gt_dir}/${GT_APP_NAME}.image" ]
+}
+
+j4p_installed() {
+  j4p_dir="$(abs_from_cwd "${J4P_INSTALL_DIR}")"
+  [ -x "${j4p_dir}/pharo-ui" ] || [ -f "${j4p_dir}/pharo-ui" ]
+}
+
 setup_traps() {
   trap 'interrupted ${LINENO}' INT
   trap 'spinner_stop; error ${LINENO}' ERR
-  # Let callers decide what to print on EXIT
 }

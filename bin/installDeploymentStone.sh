@@ -1,4 +1,4 @@
-#! /usr/bin/env sh
+#!/usr/bin/env bash
 set -eu
 
 PROGNAME=$0
@@ -23,23 +23,18 @@ load_bvc_config
 
 setup_traps
 start_banner "$@"
-information_banner "Create Development Stone"
+information_banner "Install deployment stone"
 
 usage() {
   cat 1>&2 <<EOF
 Usage:
-  $(prog_basename "$PROGNAME") [--registry=NAME] [stoneName [gemstoneVersion]]
+  $(prog_basename "$PROGNAME") [deploymentName [gemstoneVersion]]
 
 Where:
-  --registry=NAME       Registry to use (default: ${DEFAULT_REGISTRY})
-  stoneName             Name of the stone (default: ${GEMSTONE_STONE_NAME})
-  gemstoneVersion       GemStone version (default: ${GEMSTONE_VERSION})
+  deploymentName       Name of the deployment stone (default: ${GEMSTONE_STONE_NAME})
+  gemstoneVersion      GemStone version (default: ${GEMSTONE_VERSION})
 
-Examples:
-  $(prog_basename "$PROGNAME")
-  $(prog_basename "$PROGNAME") myStone
-  $(prog_basename "$PROGNAME") myStone 3.7.4.3
-  $(prog_basename "$PROGNAME") --registry=myReg myStone 3.7.4.3
+Registry is internal and comes from DEFAULT_REGISTRY in config.
 EOF
   exit 1
 }
@@ -47,9 +42,8 @@ EOF
 # ---------------------------------------------------------
 # Args
 # 0 args -> defaults
-# 1 arg  -> <stoneName>
-# 2 args -> <stoneName> <gemstoneVersion>
-# Optional --registry=NAME can appear anywhere.
+# 1 arg  -> <deploymentName>
+# 2 args -> <deploymentName> <gemstoneVersion>
 # ---------------------------------------------------------
 registry="${DEFAULT_REGISTRY}"
 gemStoneVersion="${GEMSTONE_VERSION}"
@@ -60,9 +54,8 @@ pos2=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --registry=*) registry=${1#*=} ;;
-    --help|-h)    usage ;;
-    --*)          error_banner "Unknown option: $1"; usage ;;
+    --help|-h) usage ;;
+    --*)      error_banner "Unknown option: $1"; usage ;;
     *)
       if [ -z "$pos1" ]; then
         pos1="$1"
@@ -77,7 +70,6 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-# Apply positionals over defaults
 if [ -n "$pos1" ] && [ -z "$pos2" ]; then
   stoneName="$pos1"
 elif [ -n "$pos1" ] && [ -n "$pos2" ]; then
@@ -94,7 +86,7 @@ information_banner "Stone   : ${stoneName}"
 # ---------------------------------------------------------
 if [ -z "${STONES_HOME:-}" ] || [ ! -d "${STONES_HOME:-/nonexistent}" ]; then
   error_banner "STONES_HOME is not set or does not exist."
-  exit_1_banner "Run 'bvc init' to set up GSDevKit before creating a stone."
+  exit_1_banner "GsDevKit is required before installing a deployment."
 fi
 
 # ---------------------------------------------------------
@@ -136,7 +128,7 @@ registerProduct.solo    --registry="$registry" --fromDirectory="${STONES_HOME}/g
 # Ensures configured sets are synced via gsDevKit_stones project-set commands.
 # ---------------------------------------------------------
 information_banner "Syncing project sets under ${projectsRoot}"
-"${SCRIPT_DIR}/pullProjects.sh" --registry="${registry}"
+"${SCRIPT_DIR}/bvcPullProjects.sh"
 
 # ---------------------------------------------------------
 # Stones directory (where local stones live)

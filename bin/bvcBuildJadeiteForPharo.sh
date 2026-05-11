@@ -1,4 +1,4 @@
-#! /usr/bin/env sh
+#!/usr/bin/env bash
 set -eu
 
 PROGNAME=$0
@@ -12,7 +12,7 @@ load_bvc_config
 
 setup_traps
 start_banner "$@"
-information_banner "Installing Jadeite 4 Pharo"
+information_banner "Build Jadeite for Pharo"
 
 # ---------------------------------------------------------
 # Defaults (overridable via config/env/flags)
@@ -57,10 +57,10 @@ if [ -x "${INSTALL_DIR}/pharo-ui" ] || [ -f "${INSTALL_DIR}/pharo-ui" ]; then
 fi
 
 # ---------------------------------------------------------
-# Perform setup (delegates to setupPharo.sh)
+# Perform setup (delegates to bvcBuildPharoRuntime.sh)
 # ---------------------------------------------------------
 information_banner "Setting up Pharo ${PHARO_VER} in ${INSTALL_DIR}"
-"${SCRIPT_DIR}/setupPharo.sh" \
+"${SCRIPT_DIR}/bvcBuildPharoRuntime.sh" \
   --install-dir="${INSTALL_DIR}" \
   --version="${PHARO_VER}"
 
@@ -76,4 +76,4 @@ else
   warning_banner "startup.st not found at ${startup_src} — skipping copy"
 fi
 
-exit_0_banner "Jadeite4Pharo setup complete"
+exit_0_banner "Jadeite for Pharo build complete"

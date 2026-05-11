@@ -1,4 +1,4 @@
-#! /usr/bin/env sh
+#!/usr/bin/env bash
 set -eu
 
 PROGNAME=$0
@@ -12,7 +12,7 @@ load_bvc_config
 
 setup_traps
 start_banner "$@"
-information_banner "Initialising Glamorous Toolkit"
+information_banner "Build Catalyst DevKit"
 
 # ---------------------------------------------------------
 # Defaults (overridable via config/env)
@@ -118,11 +118,9 @@ case "${platform}" in
 		exe_rel="bin/GlamorousToolkit"
 		app_rel="bin/${APP_NAME}"
 		;;
-	Win)
-		cli_rel="bin/GlamorousToolkit-cli"
-		exe_rel="bin/GlamorousToolkit.exe"
-		app_rel="bin/${APP_NAME}.exe"
-		;;
+		Win)
+			exit_1_banner "Native Windows shells are not supported. Use WSL/Linux on Windows."
+			;;
 	*)
 		exit_1_banner "Unsupported platform: ${platform}"
 		;;
@@ -184,4 +182,4 @@ mv -f "${exe_path}" "${app_path}"
 information_banner "GT installed:     ${INSTALL_DIR}"
 information_banner "Executable:       ${app_path}"
 information_banner "Image:            ${APP_NAME}.image"
-exit_0_banner "Setup complete"
+exit_0_banner "DevKit build complete"
