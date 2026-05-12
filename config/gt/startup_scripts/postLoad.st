@@ -7,6 +7,7 @@
 	BVCDevKitWorld openDefault. 
 	5 seconds wait.
 	
+"
 	(registry := GtGemStoneSessionRegistry default)
 	availableConnectors do: [ :connector | 
 		registry removeConnector: connector
@@ -26,6 +27,7 @@
 		notifyNameChanged;
 		notifyUpdated.
 	registry propertiesFile saveProperties.
+"
 	
 	FontAwesomeMetadataImporter
 		importFromIconsJsonFile: '/Users/jupiter/Downloads/fontawesome-pro-5.15.4-desktop/metadata/icons.json'
