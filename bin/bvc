@@ -30,6 +30,9 @@ Commands:
   pull
       Sync configured Catalyst project sets.
 
+  list
+      List registered deployments and currently running stones.
+
   start <deploymentName> [--with-seaside]
       Start a deployment, building it first if needed.
       --with-seaside only affects build runs and installs seaside
@@ -47,6 +50,7 @@ Examples:
   bvc devkit
   bvc j4p
   bvc pull
+  bvc list
   bvc start tgc-prod-test --with-seaside
   bvc stop tgc-prod-test
   bvc delete tgc-prod-test
@@ -70,6 +74,7 @@ case "$cmd" in
   devkit)         exec "${SCRIPT_DIR}/bvcLaunchDevKit.sh" "$@" ;;
   j4p)            exec "${SCRIPT_DIR}/bvcLaunchJadeiteForPharo.sh" "$@" ;;
   pull)           exec "${SCRIPT_DIR}/bvcPullProjects.sh" "$@" ;;
+  list)           exec "${SCRIPT_DIR}/bvcListDeployments.sh" "$@" ;;
   start)          exec "${SCRIPT_DIR}/bvcStartDeployment.sh" "$@" ;;
   stop)           exec "${SCRIPT_DIR}/bvcStopDeployment.sh" "$@" ;;
   delete)         exec "${SCRIPT_DIR}/bvcDeleteDeployment.sh" "$@" ;;
