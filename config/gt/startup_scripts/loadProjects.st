@@ -77,11 +77,6 @@ Metacello new
 	load.
 
 Metacello new
-	repository: projectsRoot, '/CatalystProcess/src';
-	baseline: 'CatalystProcess';
-	load.
-
-Metacello new
 	repository: projectsRoot, '/CatalystRuntime/src';
 	baseline: 'CatalystRuntime';
 	load.
