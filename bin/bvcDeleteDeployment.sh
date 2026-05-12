@@ -52,4 +52,5 @@ fi
 
 ensure_gsdevkit_ready
 deleteStone.solo --registry="$DEFAULT_REGISTRY" "$deploymentName"
+bvc_refresh_gt4gemstone_properties "$DEFAULT_REGISTRY"
 exit_0_banner "Deployment '${deploymentName}' deleted"

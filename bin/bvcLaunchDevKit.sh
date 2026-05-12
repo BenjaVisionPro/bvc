@@ -35,6 +35,8 @@ if ! gt_installed; then
   information_banner "DevKit not found locally; syncing project sets before build."
   "${SCRIPT_DIR}/bvcPullProjects.sh"
   "${SCRIPT_DIR}/bvcBuildDevKit.sh"
+else
+  bvc_refresh_gt4gemstone_properties "${DEFAULT_REGISTRY}"
 fi
 
 gt_dir="$(abs_from_cwd "${GT_INSTALL_DIR}")"

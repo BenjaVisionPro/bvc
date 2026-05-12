@@ -248,4 +248,6 @@ topaz -l -I "${gtGsPackageDirectory}/loginDataCurator.topaz" -S "${gtGsPackageDi
 # Restore working directory
 cd "${workingDirectory}"
 
+bvc_refresh_gt4gemstone_properties "${registry}"
+
 exit_0_banner "Stone '${stoneName}' created"

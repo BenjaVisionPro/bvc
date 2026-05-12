@@ -56,7 +56,8 @@ done
 # Idempotence: skip if already installed
 # ---------------------------------------------------------
 if [ -e "${INSTALL_DIR}/${APP_NAME}.image" ]; then
-	information_banner "GT already installed at ${INSTALL_DIR} — skipping."
+	information_banner "GT already installed at ${INSTALL_DIR} — skipping build."
+	bvc_refresh_gt4gemstone_properties "${DEFAULT_REGISTRY}"
 	exit_0_banner "GT unchanged"
 fi
 
@@ -176,6 +177,11 @@ spinner_stop
 # Brand executable/bundle to app name
 # ---------------------------------------------------------
 mv -f "${exe_path}" "${app_path}"
+
+# ---------------------------------------------------------
+# gt4gemstone connectors
+# ---------------------------------------------------------
+bvc_refresh_gt4gemstone_properties "${DEFAULT_REGISTRY}"
 
 # ---------------------------------------------------------
 # Done

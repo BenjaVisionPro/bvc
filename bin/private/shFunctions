@@ -298,6 +298,83 @@ bvc_parse_registry_stones() {
   "
 }
 
+
+
+# Write gt4gemstone connector definitions for every registered deployment stone.
+# The file is consumed by the DevKit from:
+#   ${GT_INSTALL_DIR}/pharo-local/lepiter/gt4gemstone.properties
+# If the DevKit has not been built yet, this is intentionally a no-op; the
+# DevKit build refreshes the file after installation.
+bvc_refresh_gt4gemstone_properties() {
+  local registry="${1:-${DEFAULT_REGISTRY}}"
+  local gt_dir properties_dir properties_file registry_report_file
+  local stone_count stone
+
+  gt_dir="$(abs_from_cwd "${GT_INSTALL_DIR}")"
+
+  if [ ! -d "${gt_dir}" ]; then
+    information_banner "DevKit install directory not found; skipping gt4gemstone connector refresh: ${gt_dir}"
+    return 0
+  fi
+
+  ensure_gsdevkit_ready
+  ensure_registry_exists "${registry}"
+
+  properties_dir="${gt_dir}/pharo-local/lepiter"
+  properties_file="${properties_dir}/gt4gemstone.properties"
+  registry_report_file=$(mktemp "${TMPDIR:-/tmp}/bvc-registry-report.XXXXXX")
+
+  registryReport.solo --registry="${registry}" > "${registry_report_file}"
+  mkdir -p "${properties_dir}"
+
+  information_banner "Refreshing gt4gemstone connectors: ${properties_file}"
+
+  {
+    printf '{\n'
+    printf '\t"__schema" : "4.1",\n'
+    printf '\t"namedConnectors" : {\n'
+
+    stone_count=0
+    while IFS= read -r stone; do
+      [ -n "${stone}" ] || continue
+
+      if [ "${stone_count}" -gt 0 ]; then
+        printf ',\n'
+      fi
+
+      printf '\t\t"%s" : {\n' "${stone}"
+      printf '\t\t\t"__type" : "gemstoneGciConnector",\n'
+      printf '\t\t\t"name" : "%s",\n' "${stone}"
+      printf '\t\t\t"host" : "localhost",\n'
+      printf '\t\t\t"serviceName" : "gemnetobject",\n'
+      printf '\t\t\t"iconName" : "gemStone",\n'
+      printf '\t\t\t"maxKeepAlive" : 30,\n'
+      printf '\t\t\t"stone" : "%s",\n' "${stone}"
+      printf '\t\t\t"netldi" : "%s_ldi",\n' "${stone}"
+      printf '\t\t\t"username" : "DataCurator",\n'
+      printf '\t\t\t"password" : "swordfish",\n'
+      printf '\t\t\t"libraryPath" : {\n'
+      printf '\t\t\t\t"__type" : "file",\n'
+      printf '\t\t\t\t"filename" : "%s"\n' "${STONES_HOME}/gemstone/clientlibs"
+      printf '\t\t\t},\n'
+      printf '\t\t\t"gemstoneVersion" : "%s"\n' "${GEMSTONE_VERSION}"
+      printf '\t\t}'
+
+      stone_count=$((stone_count + 1))
+    done < <(bvc_parse_registry_stones < "${registry_report_file}")
+
+    if [ "${stone_count}" -gt 0 ]; then
+      printf '\n'
+    fi
+
+    printf '\t}\n'
+    printf '}\n'
+  } > "${properties_file}"
+
+  rm -f "${registry_report_file}"
+  information_banner "gt4gemstone connectors refreshed (${stone_count} deployment(s))."
+}
+
 #===============================================
 # GsDevKit / registry / install checks
 #===============================================

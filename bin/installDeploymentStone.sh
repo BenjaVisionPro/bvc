@@ -187,4 +187,6 @@ install_projects "${gitDir_projects}"
 # Restore working directory
 cd "${workingDirectory}"
 
+bvc_refresh_gt4gemstone_properties "${registry}"
+
 exit_0_banner "Stone '${stoneName}' created"
