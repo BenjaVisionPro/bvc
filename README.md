@@ -129,9 +129,8 @@ bvc delete tgc-prod-test --force
 Config is layered from highest to lowest precedence:
 
 1. Environment variables
-2. Local root overrides in the current directory (`*.bvc`)
-3. Project config root: `${BVC_CONF_DIR:-config}/bvc/bvc_defaults`
-4. Bundled toolkit defaults: `<toolkit>/config/bvc/bvc_defaults`
-5. Hard-coded safety defaults in `bin/private/shFunctions`
+2. Project config root: `${BVC_CONF_DIR:-config}/bvc/bvc_defaults`
+3. Bundled toolkit defaults: `<toolkit>/config/bvc/bvc_defaults`
+4. Hard-coded safety defaults in `bin/private/shFunctions`
 
-`BVC_CONF_DIR` selects the project config directory only. The toolkit's bundled config always remains relative to the installed `bvc` toolkit. To use a non-default project config directory, set `BVC_CONF_DIR` in the environment or a root-level `*.bvc` file.
+`BVC_CONF_DIR` selects the project config directory only. The toolkit's bundled config always remains relative to the installed `bvc` toolkit. To use a non-default project config directory, set `BVC_CONF_DIR` in the environment before running `bvc`.

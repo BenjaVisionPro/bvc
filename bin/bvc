@@ -52,7 +52,7 @@ Examples:
   bvc delete tgc-prod-test
 
 Notes:
-- Config precedence: ENV > CWD/*.bvc > project config > bundled toolkit config > safety net.
+- Config precedence: ENV > project config > bundled toolkit config > safety net.
 - GsDevKit registry selection is internal and comes from DEFAULT_REGISTRY in config.
 EOF_HELP
 }
