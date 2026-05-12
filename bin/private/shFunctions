@@ -264,6 +264,41 @@ bvc_require_supported_platform() {
 }
 
 #===============================================
+# GsDevKit registry helpers
+#===============================================
+bvc_parse_registry_stones() {
+  awk "
+    /#stones[[:space:]]*:/ {
+      # Empty stones dictionaries are commonly printed on one line:
+      #   #stones : { },
+      # In that case, do not enter the following registry sections such as
+      # #products, otherwise product versions like 3.7.5 are reported as stones.
+      if (\$0 ~ /\\{[[:space:]]*\\}[[:space:]]*,?[[:space:]]*\$/) {
+        in_stones = 0
+        next
+      }
+
+      in_stones = 1
+      next
+    }
+
+    in_stones && /^[[:space:]]*}[[:space:]]*,?[[:space:]]*\$/ {
+      in_stones = 0
+      next
+    }
+
+    in_stones {
+      line = \$0
+      sub(/^[[:space:]]*'/, \"\", line)
+      sub(/'[[:space:]]*:.*/, \"\", line)
+      if (line != \$0 && line != \"\") {
+        print line
+      }
+    }
+  "
+}
+
+#===============================================
 # GsDevKit / registry / install checks
 #===============================================
 gsdevkit_installed() {

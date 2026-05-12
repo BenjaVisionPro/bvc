@@ -10,7 +10,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
 load_bvc_config
 setup_traps
 start_banner "$@"
-information_banner "List Catalyst deployments"
+information_banner "List stones"
 
 usage() {
   cat 1>&2 <<EOF_USAGE
@@ -25,7 +25,7 @@ EOF_USAGE
 ensure_gsdevkit_ready
 ensure_registry_exists "$DEFAULT_REGISTRY"
 
-information_banner "Registered deployments in registry '${DEFAULT_REGISTRY}':"
+information_banner "Registered stones:"
 registry_report_file=$(mktemp "${TMPDIR:-/tmp}/bvc-registry-report.XXXXXX")
 cleanup() { rm -f "$registry_report_file"; }
 trap 'cleanup; spinner_stop' EXIT

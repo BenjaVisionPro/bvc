@@ -51,5 +51,5 @@ if [ "$force" -ne 1 ]; then
 fi
 
 ensure_gsdevkit_ready
-deleteStone.solo --registry="$DEFAULT_REGISTRY" -b "$deploymentName"
+deleteStone.solo --registry="$DEFAULT_REGISTRY" "$deploymentName"
 exit_0_banner "Deployment '${deploymentName}' deleted"
