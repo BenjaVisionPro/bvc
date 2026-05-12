@@ -145,6 +145,11 @@ registerStonesDirectory.solo --registry="$registry" --stonesDirectory="${stonesD
 information_banner "Creating stone '${stoneName}' (template: default_seaside)"
 createStone.solo --registry="$registry" --template=default_seaside "$stoneName" "$gemStoneVersion"
 
+# The deployment is registered immediately after createStone.solo. Refresh the
+# DevKit connectors now, before later install tooling mutates the shell
+# environment (STONE, GEMSTONE_WORKSPACE, PATH, working directory, etc.).
+bvc_refresh_gt4gemstone_properties "${registry}"
+
 # macOS: disable native code (JIT) for this stone
 case "${OSTYPE:-}" in
   darwin*)
@@ -247,7 +252,5 @@ topaz -l -I "${gtGsPackageDirectory}/loginDataCurator.topaz" -S "${gtGsPackageDi
 
 # Restore working directory
 cd "${workingDirectory}"
-
-bvc_refresh_gt4gemstone_properties "${registry}"
 
 exit_0_banner "Stone '${stoneName}' created"
