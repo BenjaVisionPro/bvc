@@ -7,13 +7,13 @@ BenjaVision Catalyst (`bvc`) command line tool for managing applications built w
 To install the `bvc` command line tools in the default location (`/opt`), run:
 
 ```sh
-curl -fsSL https://benjavision.com/catalyst/install.sh | bash -s
+curl -fsSL https://raw.githubusercontent.com/BenjaVisionPro/bvc/refs/heads/main/bin/install.sh | bash -s
 ```
 
 To install in an alternate location, pass a prefix:
 
 ```sh
-curl -fsSL https://benjavision.com/catalyst/install.sh | bash -s -- --prefix "$HOME/catalyst"
+curl -fsSL https://raw.githubusercontent.com/BenjaVisionPro/bvc/refs/heads/main/bin/install.sh | bash -s -- --prefix "$HOME/catalyst"
 ```
 
 ## Create a new project
