@@ -55,9 +55,9 @@ if deployment_exists "$DEFAULT_REGISTRY" "$deploymentName"; then
 fi
 
 if [ "$with_seaside" -eq 1 ]; then
-  information_banner "Deployment '${deploymentName}' not found; installing with temporary Seaside path."
+  information_banner "Deployment '${deploymentName}' not found; installing devkit stone with Seaside path."
   "${SCRIPT_DIR}/installSeasideDeploymentStone.sh" "$deploymentName"
 else
-  information_banner "Deployment '${deploymentName}' not found; installing."
+  information_banner "Deployment '${deploymentName}' not found; installing rowan stone."
   "${SCRIPT_DIR}/installDeploymentStone.sh" "$deploymentName"
 fi

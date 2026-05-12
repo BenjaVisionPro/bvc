@@ -318,13 +318,24 @@ bvc_refresh_gt4gemstone_properties() {
   fi
 
   ensure_gsdevkit_ready
-  ensure_registry_exists "${registry}"
 
   properties_dir="${gt_dir}/pharo-local/lepiter"
   properties_file="${properties_dir}/gt4gemstone.properties"
   registry_report_file=$(mktemp "${TMPDIR:-/tmp}/bvc-registry-report.XXXXXX")
 
-  registryReport.solo --registry="${registry}" > "${registry_report_file}"
+  # Connector refresh is a read-only operation. Do not initialise or mutate the
+  # registry from here. Deployment start/build commands are responsible for
+  # ensuring the registry exists before reaching this point.
+  #
+  # installSeasideDeploymentStone.sh exports STONE for gt4gemstone tooling. Some
+  # GsDevKit_stones scripts treat STONE as an active stone context and may then
+  # require GEMSTONE. Registry reporting must run outside that stone context.
+  if ! ( unset STONE; registryReport.solo --registry="${registry}" > "${registry_report_file}" ); then
+    rm -f "${registry_report_file}"
+    warning_banner "Could not read GsDevKit registry '${registry}'; skipping gt4gemstone connector refresh."
+    return 0
+  fi
+
   mkdir -p "${properties_dir}"
 
   information_banner "Refreshing gt4gemstone connectors: ${properties_file}"
