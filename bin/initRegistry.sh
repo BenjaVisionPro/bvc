@@ -61,7 +61,6 @@ fi
 # - If not: create it and register the shared product directory
 # ----------------------------------------
 if registry_exists "$registry"; then
-  information_banner "GsDevKit registry '${registry}' already exists — leaving unchanged."
   exit_0_banner "Registry '${registry}' present"
 fi
 

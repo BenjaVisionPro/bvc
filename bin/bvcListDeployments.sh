@@ -10,7 +10,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
 load_bvc_config
 setup_traps
 start_banner "$@"
-information_banner "List stones"
+# information_banner "List stones"
 
 usage() {
   cat 1>&2 <<EOF_USAGE

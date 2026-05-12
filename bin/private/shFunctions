@@ -308,9 +308,7 @@ gsdevkit_installed() {
 
 ensure_gsdevkit_ready() {
   bvc_require_supported_platform
-  if gsdevkit_installed; then
-    information_banner "GsDevKit found (STONES_HOME=${STONES_HOME:-unset})."
-  else
+  if ! gsdevkit_installed; then
     information_banner "GsDevKit not found; bootstrapping."
     "${SCRIPT_DIR}/setupGsDevKit_stones.sh"
   fi
@@ -323,9 +321,7 @@ registry_exists() {
 
 ensure_registry_exists() {
   name="$1"
-  if registry_exists "$name"; then
-    information_banner "GsDevKit registry '${name}' already exists."
-  else
+  if ! registry_exists "$name"; then
     information_banner "Initialising GsDevKit registry '${name}'."
     "${SCRIPT_DIR}/initRegistry.sh" "$name"
   fi
