@@ -3,24 +3,27 @@
 # Precedence (highest → lowest):
 #   1. Environment variables (always override)
 #   2. Local overrides in CWD (*.bvc) — quick per-project tweaks
-#   3. Config root ($BVC_CONF_DIR, default: ./conf relative to CWD)
+#   3. Project config root ($BVC_CONF_DIR, default: ./config relative to CWD)
 #      └─ expected structure: $BVC_CONF_DIR/bvc/bvc_defaults
-#   4. Bundled defaults (next to the toolkit, ../conf/bvc/bvc_defaults)
+#   4. Bundled toolkit defaults (next to the toolkit, ../config/bvc/bvc_defaults)
 #   5. Hard-coded safety net in shFunctions
 #
 # Notes:
-# - This file is sourced by toolkit scripts if found in the active config root.
-# - Use ENV vars or CWD/*.bvc for ad-hoc overrides.
-# - Keep this file focused on *defaults only* (versions, names, paths).
-# - Installers and projectSets live separately under conf/.
+# - BVC_CONF_DIR selects the project config directory only.
+# - The toolkit's bundled defaults remain in the toolkit's own config directory.
+# - Set BVC_CONF_DIR in the environment or a root-level *.bvc file if you want
+#   a project config directory other than ./config.
+# - Keep this file focused on defaults only (versions, names, paths).
+# - Installers and projectSets live separately under config/.
 
 # bvc
-: "${BVC_CONF_DIR:=conf}"
+# BVC_CONF_DIR is a bootstrap setting. Set it in ENV or a root-level *.bvc file.
+# : "${BVC_CONF_DIR:=config}"
 : "${BVC_PROJECT_NAME:=BVCDevKit}"
 
 # GsDevKit
 : "${DEFAULT_REGISTRY:=bvc}"
-: "${GGSDEVKIT_STONES_DIR:=stones}"
+: "${GSDEVKIT_STONES_DIR:=stones}"
 
 # Repositories / Projects Root. Project sets will be cloned into sub-directories of this
 : "${PROJECTS_ROOT:=git_root}"

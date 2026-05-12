@@ -7,7 +7,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
 # shellcheck disable=SC1091
 . "${SCRIPT_DIR}/private/shFunctions"
 
-# Load layered config (ENV > CWD/*.bvc > $BVC_CONF_DIR/bvc/bvc_defaults > bundled > safety net)
+# Load layered config (ENV > CWD/*.bvc > project config > bundled toolkit config > safety net)
 load_bvc_config
 
 # ---------------------------------------------------------

@@ -31,8 +31,8 @@ Commands:
       Sync configured Catalyst project sets.
 
   start <deploymentName> [--with-seaside]
-      Start a deployment, installing it first if needed.
-      --with-seaside only affects first install and is temporary.
+      Start a deployment, building it first if needed.
+      --with-seaside only affects build runs and installs seaside
 
   stop <deploymentName>
       Stop a deployment.
@@ -52,7 +52,7 @@ Examples:
   bvc delete tgc-prod-test
 
 Notes:
-- Config precedence: ENV > CWD/*.bvc > \$BVC_CONF_DIR/bvc/bvc_defaults > bundled > safety net.
+- Config precedence: ENV > CWD/*.bvc > project config > bundled toolkit config > safety net.
 - GsDevKit registry selection is internal and comes from DEFAULT_REGISTRY in config.
 EOF_HELP
 }

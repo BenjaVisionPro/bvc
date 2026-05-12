@@ -7,45 +7,59 @@
 # Precedence (highest → lowest):
 #   1. Environment variables (already set in ENV)
 #   2. Local overrides in CWD (*.bvc)
-#   3. Config root ($BVC_CONF_DIR, default: ./conf relative to CWD)
+#      - also used to bootstrap BVC_CONF_DIR
+#   3. Project config root ($BVC_CONF_DIR, default: ./config relative to CWD)
 #      └─ $BVC_CONF_DIR/bvc/bvc_defaults
-#   4. Bundled defaults (../conf/bvc/bvc_defaults relative to SCRIPT_DIR)
+#   4. Bundled toolkit defaults (../config/bvc/bvc_defaults relative to SCRIPT_DIR)
 #   5. Hard-coded safety net (below)
+#
+# BVC_CONF_DIR is project config only. It does not change the bundled
+# toolkit config root.
 # ---------------------------------------------------------
 load_bvc_config() {
   : "${SCRIPT_DIR:?SCRIPT_DIR must be set before calling load_bvc_config}"
 
-  # 2) Local overrides in CWD (*.bvc)
+  # 2) Local root overrides in CWD (*.bvc). These may set BVC_CONF_DIR.
   for f in "$PWD"/*.bvc; do
     [ -r "$f" ] && . "$f"
   done
 
-  # 3) Resolve BVC_CONF_DIR (default: ./conf relative to CWD)
-  : "${BVC_CONF_DIR:=conf}"
+  # 3) Resolve project config root. BVC_CONF_DIR only selects the project layer.
+  : "${BVC_CONF_DIR:=config}"
   case "$BVC_CONF_DIR" in
-    /*)  conf_root="$BVC_CONF_DIR" ;;
-    ~)   conf_root="$HOME" ;;
-    ~/*) conf_root="$HOME/${BVC_CONF_DIR#~/}" ;;
-    *)   conf_root="$PWD/$BVC_CONF_DIR" ;;
+    /*)  project_config_root="$BVC_CONF_DIR" ;;
+    ~)   project_config_root="$HOME" ;;
+    ~/*) project_config_root="$HOME/${BVC_CONF_DIR#~/}" ;;
+    *)   project_config_root="$PWD/$BVC_CONF_DIR" ;;
   esac
 
-  CONF_DIR="$conf_root"
+  # 4) Resolve fixed toolkit config root.
+  toolkit_root="$(cd -- "${SCRIPT_DIR}/.." 2>/dev/null && pwd)"
+  toolkit_config_root="${toolkit_root}/config"
 
-  if [ -r "$conf_root/bvc/bvc_defaults" ]; then
-    . "$conf_root/bvc/bvc_defaults"
+  BVC_PROJECT_CONFIG_ROOT="$project_config_root"
+  BVC_TOOLKIT_ROOT="$toolkit_root"
+  BVC_TOOLKIT_CONFIG_ROOT="$toolkit_config_root"
+
+  # Backwards-compatible internal alias for older helper code in this repo.
+  # Public/documented name is BVC_PROJECT_CONFIG_ROOT.
+  CONF_DIR="$BVC_PROJECT_CONFIG_ROOT"
+
+  if [ -r "$BVC_PROJECT_CONFIG_ROOT/bvc/bvc_defaults" ]; then
+    . "$BVC_PROJECT_CONFIG_ROOT/bvc/bvc_defaults"
   fi
 
-  bundled_conf="${SCRIPT_DIR}/../conf/bvc/bvc_defaults"
-  [ -r "$bundled_conf" ] && . "$bundled_conf"
+  bundled_config="$BVC_TOOLKIT_CONFIG_ROOT/bvc/bvc_defaults"
+  [ -r "$bundled_config" ] && . "$bundled_config"
 
+  : "${BVC_PROJECT_NAME:=BVCDevKit}"
   : "${DEFAULT_REGISTRY:=bvc}"
   : "${GSDEVKIT_STONES_DIR:=stones}"
   : "${PROJECTS_ROOT:=git_root}"
   : "${GEMSTONE_VERSION:=3.7.5}"
   : "${GEMSTONE_STONE_NAME:=bvc_dev}"
-  : "${GT_INSTALL_DIR:=BVCDevKit}"
-  : "${GT_APP_NAME:=BVCDevKit}"
-  : "${GT_BUILD_SCRIPTS_DIR:=gt/build_scripts}"
+  : "${GT_INSTALL_DIR:=devkit}"
+  : "${GT_APP_NAME:=${BVC_PROJECT_NAME}}"
   : "${J4P_INSTALL_DIR:=Jadeite4Pharo}"
   : "${J4P_PHARO_VERSION:=120}"
   : "${PHARO_INSTALL_DIR:=Pharo}"
@@ -53,14 +67,17 @@ load_bvc_config() {
 }
 
 conf_resolve() {
-  : "${CONF_DIR:?CONF_DIR must be set (call load_bvc_config first)}"
+  : "${BVC_PROJECT_CONFIG_ROOT:?BVC_PROJECT_CONFIG_ROOT must be set (call load_bvc_config first)}"
+  : "${BVC_TOOLKIT_CONFIG_ROOT:?BVC_TOOLKIT_CONFIG_ROOT must be set (call load_bvc_config first)}"
   rel="$1"
-  if [ -r "${CONF_DIR}/${rel}" ]; then
-    printf '%s\n' "${CONF_DIR}/${rel}"
-  elif [ -r "${SCRIPT_DIR}/../conf/${rel}" ]; then
-    printf '%s\n' "${SCRIPT_DIR}/../conf/${rel}"
+  if [ -r "${BVC_PROJECT_CONFIG_ROOT}/${rel}" ]; then
+    printf '%s\n' "${BVC_PROJECT_CONFIG_ROOT}/${rel}"
+  elif [ -r "${BVC_TOOLKIT_CONFIG_ROOT}/${rel}" ]; then
+    printf '%s\n' "${BVC_TOOLKIT_CONFIG_ROOT}/${rel}"
   else
-    error_banner "Config not found in CONF_DIR or bundled: ${rel}"
+    error_banner "Config not found in project or toolkit config: ${rel}"
+    error_banner "Project config root: ${BVC_PROJECT_CONFIG_ROOT}"
+    error_banner "Toolkit config root: ${BVC_TOOLKIT_CONFIG_ROOT}"
     exit 1
   fi
 }
@@ -134,9 +151,8 @@ start_banner() {
   theArgs="$*"
   printf "%s===========================%s\n" "${ANSI_BLUE}" "${ANSI_RESET}" 1>&2
   printf "%sBenjaVision Catalyst DevKit%s\n" "${ANSI_BLUE}" "${ANSI_RESET}" 1>&2
-  printf "%s                    script: %s %s%s\n" "${ANSI_BLUE}" "$(prog_basename "$0")" "${theArgs}" "${ANSI_RESET}" 1>&2
-  printf "%s                      path: %s%s\n" "${ANSI_BLUE}" "$0" "${ANSI_RESET}" 1>&2
-  printf "%s          Send feedback to: jupiter@benjavision.com%s\n" "${ANSI_BLUE}" "${ANSI_RESET}" 1>&2
+  printf "%sscript: %s %s%s\n" "${ANSI_BLUE}" "$(prog_basename "$0")" "${theArgs}" "${ANSI_RESET}" 1>&2
+  printf "%s  path: %s%s\n" "${ANSI_BLUE}" "$0" "${ANSI_RESET}" 1>&2
   printf "%s===========================%s\n" "${ANSI_BLUE}" "${ANSI_RESET}" 1>&2
 }
 

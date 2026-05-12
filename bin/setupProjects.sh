@@ -7,7 +7,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
 # shellcheck disable=SC1091
 . "${SCRIPT_DIR}/private/shFunctions"
 
-# Layered config (ENV > CWD/*.bvc > $BVC_CONF_DIR/bvc/bvc_defaults > bundled > safety net)
+# Layered config (ENV > CWD/*.bvc > project config > bundled toolkit config > safety net)
 load_bvc_config
 
 setup_traps
@@ -63,15 +63,15 @@ if [ -z "${STONES_HOME:-}" ] || [ ! -d "${STONES_HOME:-/nonexistent}" ]; then
   exit_1_banner "GsDevKit is required before setting up project sets."
 fi
 
-# Resolve the active projectSets directory:
-#   Prefer CONF_DIR override; otherwise bundled ../conf.
-if [ -d "${CONF_DIR}/projectSets" ]; then
-  projectSetsDir="${CONF_DIR}/projectSets"
-elif [ -d "${SCRIPT_DIR}/../conf/projectSets" ]; then
-  projectSetsDir="${SCRIPT_DIR}/../conf/projectSets"
+# Resolve the active projectSets directory.
+# Project config overrides toolkit config.
+if [ -d "${BVC_PROJECT_CONFIG_ROOT}/projectSets" ]; then
+  projectSetsDir="${BVC_PROJECT_CONFIG_ROOT}/projectSets"
+elif [ -d "${BVC_TOOLKIT_CONFIG_ROOT}/projectSets" ]; then
+  projectSetsDir="${BVC_TOOLKIT_CONFIG_ROOT}/projectSets"
 else
   error_banner "No projectSets directory found."
-  exit_1_banner "Expected at: \${CONF_DIR}/projectSets or bundled ../conf/projectSets"
+  exit_1_banner "Expected at project or toolkit config root: projectSets"
 fi
 
 projectsRoot="$(abs_from_cwd "${PROJECTS_ROOT}")"

@@ -7,7 +7,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
 # shellcheck disable=SC1091
 . "${SCRIPT_DIR}/private/shFunctions"
 
-# Load layered config (ENV > CWD/*.bvc > $BVC_CONF_DIR/bvc/bvc_defaults > bundled > safety net)
+# Load layered config (ENV > CWD/*.bvc > project config > bundled toolkit config > safety net)
 load_bvc_config
 
 setup_traps
@@ -65,7 +65,7 @@ information_banner "App name:        ${APP_NAME}"
 if [ -n "${LOAD_SCRIPTS_DIR}" ]; then
   information_banner "Load scripts:    ${LOAD_SCRIPTS_DIR} (override)"
 else
-  information_banner "Load scripts:    resolved via conf_resolve (CONF_DIR → bundled)"
+  information_banner "Load scripts:    resolved via conf_resolve (project config → toolkit config)"
 fi
 information_banner "Projects root:   ${PROJECTS_ROOT_ABS}"
 
@@ -135,7 +135,7 @@ app_path="${INSTALL_DIR}/${app_rel}"
 # ---------------------------------------------------------
 # Hook scripts
 # If --load-scripts-dir is provided, use it directly.
-# Otherwise resolve each script via conf_resolve (CONF_DIR first, then bundled).
+# Otherwise resolve each script via conf_resolve (project config first, then toolkit config).
 # ---------------------------------------------------------
 if [ -n "${LOAD_SCRIPTS_DIR}" ]; then
   preLoad_st="${LOAD_SCRIPTS_DIR%/}/preLoad.st"
@@ -155,6 +155,7 @@ fi
 # Execute loads
 # ---------------------------------------------------------
 spinner_start "Running preLoad.st"
+GT_APP_NAME="${GT_APP_NAME}" \
 "${cli_path}" "${INSTALL_DIR}/GlamorousToolkit.image" st "${preLoad_st}" --interactive --save --quit
 spinner_stop
 

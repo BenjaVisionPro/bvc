@@ -1,0 +1,46 @@
+# BenjaVision Catalyst project defaults
+#
+# Precedence (highest → lowest):
+#   1. Environment variables (always override)
+#   2. Local overrides in CWD (*.bvc) — quick per-project tweaks
+#   3. Project config root ($BVC_CONF_DIR, default: ./config relative to CWD)
+#      └─ expected structure: $BVC_CONF_DIR/bvc/bvc_defaults
+#   4. Bundled toolkit defaults (next to the toolkit, ../config/bvc/bvc_defaults)
+#   5. Hard-coded safety net in shFunctions
+#
+# Notes:
+# - BVC_CONF_DIR selects the project config directory only.
+# - The toolkit's bundled defaults remain in the toolkit's own config directory.
+# - Set BVC_CONF_DIR in the environment or a root-level *.bvc file if you want
+#   a project config directory other than ./config.
+# - Uncomment any default below to override it for this project.
+# - Add project-specific defaults at the end of this file.
+# - Installers and projectSets live separately under config/.
+
+# bvc
+# BVC_CONF_DIR is a bootstrap setting. Set it in ENV or a root-level *.bvc file.
+# : "${BVC_CONF_DIR:=config}"
+: "${BVC_PROJECT_NAME:=MyProjectName}"
+
+# GsDevKit
+# : "${DEFAULT_REGISTRY:=bvc}"
+# : "${GSDEVKIT_STONES_DIR:=stones}"
+
+# Repositories / Projects Root. Project sets will be cloned into sub-directories of this
+# : "${PROJECTS_ROOT:=git_root}"
+
+# GemStone
+# : "${GEMSTONE_VERSION:=3.7.5}"
+# : "${GEMSTONE_STONE_NAME:=bvc_dev}"
+
+# GT
+# : "${GT_INSTALL_DIR:=devkit}"
+# : "${GT_APP_NAME:=${BVC_PROJECT_NAME}}"
+
+# Jadeite/Pharo (user-local installs default to CWD)
+# : "${J4P_INSTALL_DIR:=Jadeite4Pharo}"
+# : "${J4P_PHARO_VERSION:=120}"
+
+# Pharo (user-local installs default to CWD)
+# : "${PHARO_INSTALL_DIR:=Pharo}"
+# : "${PHARO_VERSION:=130}"
