@@ -190,12 +190,12 @@ gtScriptsDir="${gitDir_devtools}/gt4gemstone/scripts"
 PATH="${stonesDir}/${stoneName}/product/bin:$PATH"
 export STONE=${stoneName}
 
-# ensure scripts are executable
-pushd ${gtScriptsDir}
-#chmod 755 ./*.sh
-#chmod 755 ./seaside/*.sh
-#chmod 755 ./release/*.sh
-popd
+# Ensure gt4gemstone shell scripts are executable before invoking them.
+# Some upstream clones may not preserve executable bits on *.sh files.
+bvc_ensure_shell_scripts_executable \
+  "${gtScriptsDir}" \
+  "${gtScriptsDir}/seaside" \
+  "${gtScriptsDir}/release"
 
 # Update permissions to allow GT and Seaside to coexist
 information_banner "Expand permissions. using ${gtScriptsDir}/loginSystemUser.topaz"
@@ -225,6 +225,9 @@ mkdir -p ${GEMSTONE_WORKSPACE}
 information_banner "Package GlamorousToolkitGlobals hacky install."
 touch dummy.image
 ROWAN_PROJECTS_HOME=${gitDir_devtools} "${gtScriptsDir}/release/package-release.sh"
+
+# The packaged release contains shell scripts that may also need execute bits.
+bvc_ensure_shell_scripts_executable "${gtGsPackageDirectory}/seaside"
 "${gtGsPackageDirectory}/seaside/patch-dictionaries.sh"
 rm dummy.image
 

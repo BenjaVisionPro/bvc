@@ -103,6 +103,27 @@ project_set_dir() { printf %s "$(projects_root)/${1}"; }
 set_rowan_home_for_projects() { export ROWAN_PROJECTS_HOME="$(project_set_dir projects)"; }
 ensure_dir() { _d="$1"; [ -d "${_d}" ] || { information_banner "Creating directory: ${_d}"; mkdir -p "${_d}"; }; }
 
+# Ensure shell scripts in the supplied directories are executable by the current user.
+# Safe to call repeatedly; existing executable bits are left as-is.
+bvc_ensure_shell_scripts_executable() {
+  local dir
+
+  if [ "$#" -eq 0 ]; then
+    error_banner "No script directories supplied to bvc_ensure_shell_scripts_executable"
+    return 1
+  fi
+
+  for dir in "$@"; do
+    if [ ! -d "$dir" ]; then
+      error_banner "Script directory does not exist: $dir"
+      return 1
+    fi
+
+    information_banner "Ensuring shell scripts are executable under: $dir"
+    find "$dir" -type f -name '*.sh' -exec chmod u+x {} \;
+  done
+}
+
 #===============================================
 # Feedback & Utilities
 #===============================================
