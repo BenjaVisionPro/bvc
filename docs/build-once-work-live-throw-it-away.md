@@ -1,6 +1,6 @@
 # Build Once. Work Live. Throw It Away.
 
-Building the DevKit is the Catalyst equivalent of building your project from source and running it.
+Building the DevKit is the equivalent of building your project from source and running it.
 
 In most languages, this is part of every code change. You edit source, build the project, run the application, test the result, then repeat. That process matters because it proves the source code can produce a working system.
 
