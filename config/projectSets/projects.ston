@@ -43,18 +43,6 @@ GDKProjectSet {
 			'gitUrls' : {
 				'origin' : 'git@github.com:JupiterJones/gsApplicationTools.git'
 			}
-		},
-		'Sparta' : {
-			'revision' : 'blur',
-			'gitUrls' : {
-				'origin' : 'git@github.com:JupiterJones/sparta.git'
-			}
-		},
-		'Bloc' : {
-			'revision' : 'blur',
-			'gitUrls' : {
-				'origin' : 'git@github.com:JupiterJones/Bloc.git'
-			}
 		}
 	},
 	#comment : 'BenjaVision Catalyst Projects'

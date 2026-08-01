@@ -16,20 +16,7 @@ Metacello new
 	repository: 'github://svenvc/NeoJSON/repository';
 	baseline: 'NeoJSON';
 	load.
-
-Metacello new
-	repository: 'gitlocal:///opt/git/JupiterJones/Bloc/src';
-	baseline: 'Bloc';
-	onConflictUseIncoming;
-	load.
-	
-Metacello new
-	repository: 'gitlocal:///opt/git/JupiterJones/sparta/src';
-	baseline: 'Sparta';
-	onConflictUseIncoming;
-	load.
-	
-	
+		
 "
 Metacello new
 	baseline:'Seaside3';
@@ -81,6 +68,11 @@ Metacello new
 Metacello new
 	repository: projectsRoot, '/CatalystDevKit/src';
 	baseline: 'CatalystDevKit';
+	load.
+
+Metacello new
+	repository: projectsRoot, '/CatalystFoundation/src';
+	baseline: 'CatalystPhysics';
 	load.
 
 Metacello new
