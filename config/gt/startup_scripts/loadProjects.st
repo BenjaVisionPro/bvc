@@ -73,6 +73,7 @@ Metacello new
 Metacello new
 	repository: projectsRoot, '/CatalystFoundation/src';
 	baseline: 'CatalystPhysics';
+	onConflictUseLoaded;
 	load.
 
 Metacello new
