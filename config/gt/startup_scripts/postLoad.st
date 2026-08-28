@@ -28,13 +28,7 @@
 		notifyUpdated.
 	registry propertiesFile saveProperties.
 "
-	
-	FontAwesomeMetadataImporter
-		importFromIconsJsonFile: '/Users/jupiter/Downloads/fontawesome-pro-plus-7.3.1-desktop/metadata/icons.json'
-				asFileReference
-		packageName: 'BVC-FontAwesome-Fonts'
-		version: '7.3.1'.
-		
+
 	5 seconds wait
 ] on: Error do: [ :e | 
 	Smalltalk logError: e messageText inContext: e signalerContext. 
