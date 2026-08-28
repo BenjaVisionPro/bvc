@@ -58,6 +58,7 @@ Metacello new
 Metacello new
 	repository: projectsRoot, '/Gt4FontAwesome/src';
 	baseline: 'Gt4FontAwesome';
+	onConflictUseLoaded;
 	load.
 
 Metacello new

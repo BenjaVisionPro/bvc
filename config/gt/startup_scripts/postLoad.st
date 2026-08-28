@@ -30,10 +30,10 @@
 "
 	
 	FontAwesomeMetadataImporter
-		importFromIconsJsonFile: '/Users/jupiter/Downloads/fontawesome-pro-5.15.4-desktop/metadata/icons.json'
+		importFromIconsJsonFile: '/Users/jupiter/Downloads/fontawesome-pro-plus-7.3.1-desktop/metadata/icons.json'
 				asFileReference
 		packageName: 'BVC-FontAwesome-Fonts'
-		version: '5.15.4'.
+		version: '7.3.1'.
 		
 	5 seconds wait
 ] on: Error do: [ :e | 
