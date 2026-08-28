@@ -60,6 +60,12 @@ Metacello new
 	baseline: 'Gt4FontAwesome';
 	onConflictUseLoaded;
 	load.
+	
+(Smalltalk at: #FontAwesomeMetadataImporter)
+	importFromIconsJsonFile: '/Users/jupiter/Downloads/fontawesome-pro-plus-7.3.1-desktop/metadata/icons.json'
+			asFileReference
+	packageName: 'BVC-FontAwesome-Fonts'
+	version: '7.3.1'.
 
 Metacello new
 	repository: projectsRoot, '/CatalystTheme/src';
@@ -69,6 +75,7 @@ Metacello new
 Metacello new
 	repository: projectsRoot, '/CatalystDevKit/src';
 	baseline: 'CatalystDevKit';
+	onConflictUseLoaded;
 	load.
 
 Metacello new
