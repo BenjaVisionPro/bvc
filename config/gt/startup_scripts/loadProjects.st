@@ -6,6 +6,17 @@ projectsRoot := 'gitlocal://', (OSPlatform current environment at: 'PROJECTS_ROO
 Transcript show: 'LOADING User Projects FROM ', 
 	(projectsRoot ifNil: ['<none>']).
 
+Metacello new
+        baseline: 'SpartaSkia';
+        repository: 'tonel:///opt/git/JupiterJones/gt-blur-workspace/sparta/src';
+    	onConflictUseIncoming;
+        load.
+Metacello new
+        baseline: 'Bloc';
+        repository: 'tonel:///opt/git/JupiterJones/gt-blur-workspace/Bloc/src';
+    	onConflictUseLoaded;
+        load.
+
 
 Metacello new
 	repository: 'github://svenvc/NeoCSV/repository';
@@ -93,6 +104,11 @@ Metacello new
 Metacello new
 	repository: projectsRoot, '/CatalystRuntime/src';
 	baseline: 'CatalystRuntime';
+	load.
+
+Metacello new
+	repository: projectsRoot, '/CatalystProcess/src';
+	baseline: 'CatalystProcess';
 	load.
 
 2 seconds wait
