@@ -109,6 +109,7 @@ Metacello new
 Metacello new
 	repository: projectsRoot, '/CatalystProcess/src';
 	baseline: 'CatalystProcess';
+	onConflictUseLoaded;
 	load.
 
 2 seconds wait
