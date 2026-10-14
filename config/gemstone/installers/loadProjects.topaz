@@ -1,0 +1,54 @@
+iferr 1 stk
+iferr 2 stack
+iferr 3 exit
+
+expectvalue true
+run
+| projectsRoot |
+projectsRoot := 'gitlocal://', (System gemEnvironmentVariable: 'PROJECTS_ROOT').
+
+GsDeployer deploy: [
+  "GemStone prerequisites."
+  Metacello new
+    baseline: 'GsApplicationTools';
+    repository: 'github://GsDevKit/gsApplicationTools/repository';
+    load: #('Core').
+
+  Metacello new
+    baseline: 'Magritte3';
+    repository: 'github://GsDevKit/Magritte3:master/repository';
+    onConflictUseLoaded;
+    onLock: [:ex | ex honor];
+    load: #('Core').
+
+  "Shared projects, in the same order as the Pharo/GT loader."
+  Metacello new
+    repository: 'github://svenvc/NeoCSV/repository';
+    baseline: 'NeoCSV';
+    load.
+
+  Metacello new
+    repository: 'github://svenvc/NeoJSON/repository';
+    baseline: 'NeoJSON';
+    load.
+
+  Metacello new
+    repository: projectsRoot, '/CatalystFoundation/src';
+    baseline: 'CatalystFoundation';
+    onConflictUseLoaded;
+    load.
+
+  Metacello new
+    repository: projectsRoot, '/CatalystRuntime/src';
+    baseline: 'CatalystRuntime';
+    load.
+
+  Metacello new
+    repository: projectsRoot, '/CatalystProcess/src';
+    baseline: 'CatalystProcess';
+    onConflictUseLoaded;
+    load ].
+true
+%
+commit
+errorCount

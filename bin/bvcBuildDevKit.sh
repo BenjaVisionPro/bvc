@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -euo pipefail
 
 PROGNAME=$0
 SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
@@ -52,14 +52,28 @@ for arg in "$@"; do
 	esac
 done
 
+# Use the effective flag values consistently in image naming and connectors.
+GT_INSTALL_DIR=${INSTALL_DIR%/}
+GT_APP_NAME=$APP_NAME
+bvc_lock "${GT_INSTALL_DIR}.build-lock"
+
 # ---------------------------------------------------------
 # Idempotence: skip if already installed
 # ---------------------------------------------------------
-if [ -e "${INSTALL_DIR}/${APP_NAME}.image" ]; then
+if gt_installed; then
 	information_banner "GT already installed at ${INSTALL_DIR} — skipping build."
 	bvc_refresh_gt4gemstone_properties "${DEFAULT_REGISTRY}"
 	exit_0_banner "GT unchanged"
 fi
+
+# Build privately and publish only after every load succeeds. An interrupted
+# build can then be retried without an intermediate image looking installed.
+if [ -e "$GT_INSTALL_DIR" ]; then
+  exit_1_banner "Incomplete DevKit at ${GT_INSTALL_DIR}. Move it aside to preserve any live work, then rerun."
+fi
+BUILD_DIR=$(mktemp -d "${GT_INSTALL_DIR}.build.XXXXXX")
+INSTALL_DIR=$BUILD_DIR
+trap 'spinner_stop; [ -z "${BUILD_DIR:-}" ] || rm -rf -- "$BUILD_DIR"; rm -f "${bvc_lock_dir}/pid"; rmdir "$bvc_lock_dir"' EXIT
 
 information_banner "Install dir:     ${INSTALL_DIR}"
 information_banner "App name:        ${APP_NAME}"
@@ -101,9 +115,9 @@ mkdir -p "${INSTALL_DIR}"
 # Download & unzip
 # ---------------------------------------------------------
 information_banner "Downloading GT from: ${downloadLink}"
-curl -fSLo "${downloadFile}" "${downloadLink}"
-unzip -qq -d "${INSTALL_DIR}" "${downloadFile}"
-rm -f "${downloadFile}"
+curl -fSLo "${INSTALL_DIR}/download.zip" "${downloadLink}"
+unzip -qq -d "${INSTALL_DIR}" "${INSTALL_DIR}/download.zip"
+rm -f "${INSTALL_DIR}/download.zip"
 
 # ---------------------------------------------------------
 # Determine CLI/executable layout
@@ -156,7 +170,7 @@ fi
 # Execute loads
 # ---------------------------------------------------------
 spinner_start "Running preLoad.st"
-GT_APP_NAME="${GT_APP_NAME}" \
+GT_APP_NAME="${APP_NAME}" \
 "${cli_path}" "${INSTALL_DIR}/GlamorousToolkit.image" st "${preLoad_st}" --interactive --save --quit
 spinner_stop
 
@@ -176,7 +190,13 @@ spinner_stop
 # ---------------------------------------------------------
 # Brand executable/bundle to app name
 # ---------------------------------------------------------
-mv -f "${exe_path}" "${app_path}"
+if [ "$exe_path" != "$app_path" ]; then
+  mv "${exe_path}" "${app_path}"
+fi
+[ -f "${INSTALL_DIR}/${APP_NAME}.image" ] || exit_1_banner 'Build did not produce the application image'
+mv "$BUILD_DIR" "$GT_INSTALL_DIR"
+BUILD_DIR=''
+INSTALL_DIR=$GT_INSTALL_DIR
 
 # ---------------------------------------------------------
 # gt4gemstone connectors
@@ -187,6 +207,6 @@ bvc_refresh_gt4gemstone_properties "${DEFAULT_REGISTRY}"
 # Done
 # ---------------------------------------------------------
 information_banner "GT installed:     ${INSTALL_DIR}"
-information_banner "Executable:       ${app_path}"
+information_banner "Executable:       $(gt_executable)"
 information_banner "Image:            ${APP_NAME}.image"
 exit_0_banner "DevKit build complete"

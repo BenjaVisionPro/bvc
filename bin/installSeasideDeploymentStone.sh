@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -euo pipefail
 
 PROGNAME=$0
 SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
@@ -10,16 +10,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
 # Load layered config (ENV > project config > bundled toolkit config > safety net)
 load_bvc_config
 
-# ---------------------------------------------------------
-# Required installers (fatal if missing)
-# Must provide:
-#   - install_devtools_projects <gitDirForDevTools>
-#   - install_projects <gitDirForProjects>
-# ---------------------------------------------------------
-# shellcheck disable=SC1090
-. "$(conf_resolve 'gemstone/installers/dev_tools.install')"
-# shellcheck disable=SC1090
-. "$(conf_resolve 'gemstone/installers/projects.install')"
+# Seaside stones use Metacello. Do not source the Rowan installer hooks here.
 
 setup_traps
 start_banner "$@"
@@ -94,7 +85,7 @@ fi
 # ---------------------------------------------------------
 workingDirectory="$(pwd)"
 projectPath="${workingDirectory}"
-stonesDir="${projectPath}/${GSDEVKIT_STONES_DIR}"
+stonesDir="$(abs_from_cwd "${GSDEVKIT_STONES_DIR}")"
 
 # New projects root model
 projectsRoot="$(abs_from_cwd "${PROJECTS_ROOT}")"
@@ -143,6 +134,7 @@ registerStonesDirectory.solo --registry="$registry" --stonesDirectory="${stonesD
 # Create the stone (template: default_seaside)
 # ---------------------------------------------------------
 information_banner "Creating stone '${stoneName}' (template: default_seaside)"
+printf '%s\n' seaside > "${stonesDir}/.${stoneName}.bvc-installing"
 createStone.solo --registry="$registry" --template=default_seaside "$stoneName" "$gemStoneVersion"
 
 # The deployment is registered immediately after createStone.solo. Refresh the
@@ -170,7 +162,7 @@ updateCustomEnv.solo --registry="$registry" "$stoneName" \
 # Start the stone & show status
 # ---------------------------------------------------------
 information_banner "Starting stone '${stoneName}'"
-startStone.solo --registry="$registry" "$stoneName" -b
+bvc_start_stone "$registry" "$stoneName"
 gslist.solo -l || true
 
 # ---------------------------------------------------------
@@ -204,11 +196,11 @@ bvc_ensure_shell_scripts_executable \
 
 # Update permissions to allow GT and Seaside to coexist
 information_banner "Expand permissions. using ${gtScriptsDir}/loginSystemUser.topaz"
-topaz -l -I ${gtScriptsDir}/loginSystemUser.topaz  -S ${gtScriptsDir}/seaside/seaside-permissions.topaz < /dev/zero
+topaz -l -I "${gtScriptsDir}/loginSystemUser.topaz" -S "${gtScriptsDir}/seaside/seaside-permissions.topaz" < /dev/zero
 
 # Install Seaside
 information_banner "Install seaside. using ${gtScriptsDir}/loginDataCurator.topaz"
-topaz -l -I ${gtScriptsDir}/loginDataCurator.topaz  -S ${gtScriptsDir}/seaside/installSeaside.topaz < /dev/zero
+topaz -l -I "${gtScriptsDir}/loginDataCurator.topaz" -S "${gtScriptsDir}/seaside/installSeaside.topaz" < /dev/zero
 
 
 
@@ -223,8 +215,8 @@ export GEMSTONE_WORKSPACE=${gitDir_devtools}/devkit_workspace
 export RELEASED_PACKAGE_GEMSTONE_NAME="gt4gemstone-3.7"
 gtGsPackageDirectory=${GEMSTONE_WORKSPACE}/${RELEASED_PACKAGE_GEMSTONE_NAME}
 export GT4GEMSTONE_VERSION=dev
-rm -Rf ${GEMSTONE_WORKSPACE}
-mkdir -p ${GEMSTONE_WORKSPACE}
+rm -Rf "${GEMSTONE_WORKSPACE}"
+mkdir -p "${GEMSTONE_WORKSPACE}"
 
 # Package the release
 information_banner "Package GlamorousToolkitGlobals hacky install."
@@ -248,9 +240,9 @@ information_banner "Install GT"
 echo "Apply Gt/Seaside patches"
 topaz -l -I "${gtGsPackageDirectory}/loginDataCurator.topaz" -S "${gtGsPackageDirectory}/seaside/seaside-gt-patches.topaz" < /dev/zero
 
-
-
 # Restore working directory
 cd "${workingDirectory}"
+printf '%s\n' seaside:projects > "${stonesDir}/.${stoneName}.bvc-installing"
+"${SCRIPT_DIR}/installSeasideProjects.sh" "$stoneName"
 
 exit_0_banner "Stone '${stoneName}' created"

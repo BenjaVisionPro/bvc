@@ -15,20 +15,14 @@ print_help() {
 Usage: $(prog_basename "$PROGNAME") <command> [args]
 
 Commands:
-  create <projectName>
-      Create a new Catalyst project directory, then initialise it.
+  init [directory] [--template=NAME]
+      Initialise the current directory, or create and initialise directory.
 
-  init
-      Initialise the current directory as a Catalyst project.
+  build [--with-seaside]
+      Build the DevKit/app and install GemStone if needed, then run both.
 
-  devkit
-      Build Catalyst DevKit if needed, then launch it.
-
-  j4p
-      Build Jadeite for Pharo if needed, then launch it.
-
-  pull
-      Sync configured Catalyst project sets.
+  run
+      Build the DevKit/app if needed, then launch it. Does not start GemStone.
 
   list
       List registered deployments and currently running stones.
@@ -45,11 +39,10 @@ Commands:
       Prompts for confirmation unless --force is provided.
 
 Examples:
-  bvc create ThatGameCatalyst
+  bvc init ThatGameCatalyst
   cd ThatGameCatalyst
-  bvc devkit
-  bvc j4p
-  bvc pull
+  bvc build
+  bvc run
   bvc list
   bvc start tgc-prod-test --with-seaside
   bvc stop tgc-prod-test
@@ -58,6 +51,8 @@ Examples:
 Notes:
 - Config precedence: ENV > project config > bundled toolkit config > safety net.
 - GsDevKit registry selection is internal and comes from DEFAULT_REGISTRY in config.
+- build uses GEMSTONE_STONE_NAME for the project's deployment.
+- start, stop, list and delete operate on GemStone only.
 EOF_HELP
 }
 
@@ -69,11 +64,9 @@ else
 fi
 
 case "$cmd" in
-  create)         exec "${SCRIPT_DIR}/bvcCreateProject.sh" "$@" ;;
   init)           exec "${SCRIPT_DIR}/bvcInitProject.sh" "$@" ;;
-  devkit)         exec "${SCRIPT_DIR}/bvcLaunchDevKit.sh" "$@" ;;
-  j4p)            exec "${SCRIPT_DIR}/bvcLaunchJadeiteForPharo.sh" "$@" ;;
-  pull)           exec "${SCRIPT_DIR}/bvcPullProjects.sh" "$@" ;;
+  build)          exec "${SCRIPT_DIR}/bvcBuild.sh" "$@" ;;
+  run)            exec "${SCRIPT_DIR}/bvcLaunchDevKit.sh" "$@" ;;
   list)           exec "${SCRIPT_DIR}/bvcListDeployments.sh" "$@" ;;
   start)          exec "${SCRIPT_DIR}/bvcStartDeployment.sh" "$@" ;;
   stop)           exec "${SCRIPT_DIR}/bvcStopDeployment.sh" "$@" ;;

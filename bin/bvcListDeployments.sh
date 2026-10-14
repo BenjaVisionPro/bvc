@@ -17,8 +17,10 @@ usage() {
 Usage:
   $(prog_basename "$PROGNAME")
 EOF_USAGE
-  exit 1
+  exit "${1:-1}"
 }
+
+case "${1:-}" in --help|-h) usage 0 ;; esac
 
 [ $# -eq 0 ] || usage
 
@@ -45,5 +47,5 @@ if [ "$registered_count" -eq 0 ]; then
 fi
 
 printf '\n' 1>&2
-information_banner "Running stones from gslist.solo -lc:"
-gslist.solo -lc
+information_banner "GemStone processes:"
+gslist.solo -l

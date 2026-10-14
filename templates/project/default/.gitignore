@@ -29,5 +29,9 @@ github-*.zip
 
 # BenjaVision Catalyst
 devkit
+devkit.build.*
+devkit.build-lock
+devkit.run-lock
 stones
+git_root
 *.zip

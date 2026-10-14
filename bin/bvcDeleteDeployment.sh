@@ -17,7 +17,7 @@ usage() {
 Usage:
   $(prog_basename "$PROGNAME") <deploymentName> [-f|--force]
 EOF_USAGE
-  exit 1
+  exit "${1:-1}"
 }
 
 force=0
@@ -25,7 +25,7 @@ deploymentName=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -f|--force) force=1 ;;
-    --help|-h) usage ;;
+    --help|-h) usage 0 ;;
     --*) error_banner "Unknown option for delete: $1"; usage ;;
     *)
       if [ -z "$deploymentName" ]; then
@@ -40,6 +40,7 @@ while [ $# -gt 0 ]; do
 done
 
 [ -n "$deploymentName" ] || usage
+bvc_validate_deployment_name "$deploymentName"
 
 if [ "$force" -ne 1 ]; then
   warning_banner "This will delete deployment '${deploymentName}' and all associated data."
@@ -51,6 +52,8 @@ if [ "$force" -ne 1 ]; then
 fi
 
 ensure_gsdevkit_ready
+bvc_lock "$(abs_from_cwd "$GSDEVKIT_STONES_DIR")/.${deploymentName}.bvc-lock"
 deleteStone.solo --registry="$DEFAULT_REGISTRY" "$deploymentName"
+rm -f "$(abs_from_cwd "$GSDEVKIT_STONES_DIR")/.${deploymentName}.bvc-installing"
 bvc_refresh_gt4gemstone_properties "$DEFAULT_REGISTRY"
 exit_0_banner "Deployment '${deploymentName}' deleted"

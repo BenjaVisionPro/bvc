@@ -122,12 +122,14 @@ process_set() {
 set_found=0
 
 # 1) dev_tools first (if present)
-if process_set "dev_tools"; then
+if [ -f "${projectSetsDir}/dev_tools.ston" ]; then
+  process_set "dev_tools"
   set_found=1
 fi
 
 # 2) projects second (if present)
-if process_set "projects"; then
+if [ -f "${projectSetsDir}/projects.ston" ]; then
+  process_set "projects"
   set_found=1
 fi
 
@@ -140,9 +142,8 @@ for ston in "${projectSetsDir}"/*.ston; do
   case "$name" in
     dev_tools|projects) continue ;;
   esac
-  if process_set "${name}"; then
-    set_found=1
-  fi
+  process_set "${name}"
+  set_found=1
 done
 set -f
 

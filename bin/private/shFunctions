@@ -191,6 +191,10 @@ error() {
 spinner_pid=
 
 spinner_start() {
+  if [ ! -t 1 ]; then
+    information_banner "$1"
+    return 0
+  fi
   local spin='⣾⣽⣻⢿⡿⣟⣯⣷'
   local charwidth=3
   local i=0
@@ -317,7 +321,8 @@ bvc_refresh_gt4gemstone_properties() {
     return 0
   fi
 
-  ensure_gsdevkit_ready
+  # Refreshing connections must not install server tooling as a side effect.
+  gsdevkit_installed || return 0
 
   properties_dir="${gt_dir}/pharo-local/lepiter"
   properties_file="${properties_dir}/gt4gemstone.properties"
@@ -396,9 +401,16 @@ gsdevkit_installed() {
 
 ensure_gsdevkit_ready() {
   bvc_require_supported_platform
+  # Child installers cannot update their parent's environment. Establish it
+  # here so a first install can continue in the same invocation.
+  export STONES_HOME="$(abs_from_cwd "${STONES_HOME:-/opt/GsDevKit}")"
+  export STONES_DATA_HOME="${STONES_DATA_HOME:-${STONES_HOME}/data}"
+  export PATH="${STONES_HOME}/git/superDoit/bin:${STONES_HOME}/git/GsDevKit_stones/bin:${PATH}"
   if ! gsdevkit_installed; then
     information_banner "GsDevKit not found; bootstrapping."
-    "${SCRIPT_DIR}/setupGsDevKit_stones.sh"
+    "${SCRIPT_DIR}/setupGsDevKit_stones.sh" \
+      --parent-dir "$(dirname "$STONES_HOME")" --name "${STONES_HOME##*/}"
+    gsdevkit_installed || exit_1_banner 'GsDevKit installation did not produce a usable runtime'
   fi
 }
 
@@ -421,9 +433,75 @@ deployment_exists() {
   registryReport.solo --registry="$registry" --stone="$deployment" >/dev/null 2>&1
 }
 
+bvc_validate_deployment_name() {
+  case "$1" in
+    ''|[!a-zA-Z0-9_]*|*[!a-zA-Z0-9_.-]*)
+      exit_1_banner "Invalid deployment name: $1" ;;
+  esac
+}
+
+bvc_stone_running() {
+  local report
+  report=$(gslist.solo -l) || exit_1_banner 'Could not inspect running GemStone processes'
+  printf '%s\n' "$report" | awk -v stone="$1" '
+    NF >= 2 && $NF == stone && $(NF-1) == "Stone" && ($1 == "exists" || $1 == "OK") { found = 1 }
+    END { exit !found }
+  '
+}
+
+bvc_start_stone() {
+  if bvc_stone_running "$2"; then
+    information_banner "GemStone deployment '$2' is already running"
+    startNetldi.solo --registry="$1" "$2"
+  else
+    # startstone already waits for startup. GsDevKit's optional --wait path
+    # uses the unsupported Smalltalk selector != in some shipped versions.
+    startStone.solo --registry="$1" "$2" -b
+  fi
+}
+
 gt_installed() {
+  local gt_dir
   gt_dir="$(abs_from_cwd "${GT_INSTALL_DIR}")"
-  [ -e "${gt_dir}/${GT_APP_NAME}.image" ]
+  [ -f "${gt_dir}/${GT_APP_NAME}.image" ] && [ -x "$(gt_executable "$gt_dir")" ]
+}
+
+gt_executable() {
+  local gt_dir="${1:-$(abs_from_cwd "${GT_INSTALL_DIR}")}"
+  case "$(uname -s)" in
+    Darwin) printf '%s\n' "${gt_dir}/${GT_APP_NAME}.app/Contents/MacOS/GlamorousToolkit-cli" ;;
+    Linux) printf '%s\n' "${gt_dir}/bin/GlamorousToolkit-cli" ;;
+    *) exit_1_banner 'Unsupported platform. Use macOS, Linux, or WSL.' ;;
+  esac
+}
+
+# Validate the command as well as the PID, since operating systems reuse PIDs.
+gt_running() {
+  local gt_dir pid command
+  gt_dir="$(abs_from_cwd "${GT_INSTALL_DIR}")"
+  [ -f "${gt_dir}/.bvc.pid" ] || return 1
+  read -r pid < "${gt_dir}/.bvc.pid" || return 1
+  case "$pid" in ''|*[!0-9]*) return 1 ;; esac
+  kill -0 "$pid" 2>/dev/null || return 1
+  command=$(ps -ww -p "$pid" -o command=) || \
+    exit_1_banner "Cannot inspect DevKit process ${pid}; refusing to launch a possible duplicate."
+  case "$command" in
+    *"${gt_dir}/${GT_APP_NAME}.image"*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Serialize each local operation. A leftover lock after a hard kill fails
+# explicitly rather than risking two writers or duplicate application launches.
+bvc_lock() {
+  local lock_dir="$1"
+  mkdir -p "$(dirname "$lock_dir")"
+  if ! mkdir "$lock_dir" 2>/dev/null; then
+    exit_1_banner "Operation locked: ${lock_dir}. If its process has exited, remove this lock directory and retry."
+  fi
+  bvc_lock_dir=$lock_dir
+  printf '%s\n' "$$" > "${bvc_lock_dir}/pid"
+  trap 'spinner_stop; rm -f "${bvc_lock_dir}/pid"; rmdir "$bvc_lock_dir"' EXIT
 }
 
 j4p_installed() {

@@ -36,3 +36,6 @@ github-*.zip
 # BenjaVision Catalyst
 IDE
 *.zip
+
+# CLI contract test bytecode
+__pycache__/

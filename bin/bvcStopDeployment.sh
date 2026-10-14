@@ -17,13 +17,21 @@ usage() {
 Usage:
   $(prog_basename "$PROGNAME") <deploymentName>
 EOF_USAGE
-  exit 1
+  exit "${1:-1}"
 }
+
+case "${1:-}" in --help|-h) usage 0 ;; esac
 
 [ $# -eq 1 ] || usage
 case "$1" in --*|'') usage ;; esac
 deploymentName="$1"
+bvc_validate_deployment_name "$deploymentName"
 
 ensure_gsdevkit_ready
-stopStone.solo --registry="$DEFAULT_REGISTRY" -b "$deploymentName"
+bvc_lock "$(abs_from_cwd "$GSDEVKIT_STONES_DIR")/.${deploymentName}.bvc-lock"
+if bvc_stone_running "$deploymentName"; then
+  stopStone.solo --registry="$DEFAULT_REGISTRY" -b "$deploymentName"
+else
+  stopNetldi.solo --registry="$DEFAULT_REGISTRY" "$deploymentName"
+fi
 exit_0_banner "Deployment '${deploymentName}' stopped"

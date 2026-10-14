@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -euo pipefail
 
 PROGNAME=$0
 SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
@@ -94,7 +94,14 @@ fi
 # ---------------------------------------------------------
 workingDirectory="$(pwd)"
 projectPath="${workingDirectory}"
-stonesDir="${projectPath}/${GSDEVKIT_STONES_DIR}"
+stonesDir="$(abs_from_cwd "${GSDEVKIT_STONES_DIR}")"
+installState="${stonesDir}/.${stoneName}.bvc-installing"
+phase=rowan:creating
+save_phase() {
+  phase="$1"
+  printf '%s\n' "$phase" > "${installState}.tmp"
+  mv "${installState}.tmp" "$installState"
+}
 
 # New projects root model
 projectsRoot="$(abs_from_cwd "${PROJECTS_ROOT}")"
@@ -105,72 +112,100 @@ gitDir_devtools="${projectsRoot}/dev_tools"
 [ -d "${projectsRoot}" ] || mkdir -p "${projectsRoot}"
 
 # ---------------------------------------------------------
-# If the stone already exists, leave it alone
+# Completed stones are unchanged. Incomplete Rowan installs resume without
+# recreating extents or reloading steps already recorded as successful.
 # ---------------------------------------------------------
 if registryReport.solo --registry="$registry" --stone="$stoneName" >/dev/null 2>&1; then
-  information_banner "Stone '${stoneName}' already exists in registry '${registry}' — leaving it unchanged."
-  information_banner "To recreate: stop the stone, delete its directory (in '${stonesDir}/${stoneName}' or '${STONES_HOME}/${stoneName}'), then rerun."
-  exit_0_banner "Stone '${stoneName}' unchanged"
+  [ -f "$installState" ] || exit_0_banner "Stone '${stoneName}' unchanged"
+  stoneSpec="${stonesDir}/${stoneName}/.GDKStoneSpec.ston"
+  if ! grep -Eq "#stoneDirectorySpecName[[:space:]]*:[[:space:]]*'default_rowan3'" "$stoneSpec"; then
+    exit_1_banner "Cannot resume '${stoneName}' with the Rowan installer: its local stone specification is missing or uses another template. Data has been preserved."
+  fi
+  phase=$(cat "$installState")
+  # Before step tracking was introduced the marker was empty. Existing Rowan
+  # stones from that version resume configuration and package loading.
+  case "$phase" in
+    '') phase=rowan:created ;;
+    rowan:created|rowan:configured|rowan:devtools|rowan:projects) ;;
+    *) exit_1_banner "Installation state '${phase}' requires inspection before resuming '${stoneName}'. Data has been preserved." ;;
+  esac
+  [ -f "${stonesDir}/${stoneName}/system.conf" ] || \
+    exit_1_banner "Stone '${stoneName}' has incomplete files; refusing to recreate it automatically"
+  information_banner "Resuming '${stoneName}' after ${phase#rowan:}"
+else
+  if [ -e "${stonesDir}/${stoneName}" ]; then
+    exit_1_banner "Unregistered stone directory already exists: ${stonesDir}/${stoneName}. Refusing to overwrite it."
+  fi
+
+  # ---------------------------------------------------------
+  # Products (GemStone VM + client libs) and registration
+  # ---------------------------------------------------------
+  information_banner "Installing GemStone ${gemStoneVersion}"
+  downloadGemStone.solo   --registry="$registry" "$gemStoneVersion"
+  updateClientLibs.solo   --registry="$registry" "$gemStoneVersion"
+
+  information_banner "Registering GemStone ${gemStoneVersion}"
+  registerProduct.solo    --registry="$registry" --fromDirectory="${STONES_HOME}/gemstone"
+
+  # ---------------------------------------------------------
+  # Project sets + repo updates
+  # Ensures configured sets are synced via gsDevKit_stones project-set commands.
+  # ---------------------------------------------------------
+  information_banner "Syncing project sets under ${projectsRoot}"
+  "${SCRIPT_DIR}/bvcPullProjects.sh"
+
+  # ---------------------------------------------------------
+  # Stones directory (where local stones live)
+  # ---------------------------------------------------------
+  information_banner "Ensuring stones directory: ${stonesDir}"
+  [ -d "${stonesDir}" ] || mkdir -p "${stonesDir}"
+
+  information_banner "Registering stones directory: ${stonesDir}"
+  registerStonesDirectory.solo --registry="$registry" --stonesDirectory="${stonesDir}"
+
+  # ---------------------------------------------------------
+  # Create the stone (template: default_rowan3)
+  # ---------------------------------------------------------
+  information_banner "Creating stone '${stoneName}' (template: default_rowan3)"
+  save_phase rowan:creating
+  createStone.solo --registry="$registry" --template=default_rowan3 "$stoneName" "$gemStoneVersion"
+  save_phase rowan:created
 fi
-
-# ---------------------------------------------------------
-# Products (GemStone VM + client libs) and registration
-# ---------------------------------------------------------
-information_banner "Installing GemStone ${gemStoneVersion}"
-downloadGemStone.solo   --registry="$registry" "$gemStoneVersion"
-updateClientLibs.solo   --registry="$registry" "$gemStoneVersion"
-
-information_banner "Registering GemStone ${gemStoneVersion}"
-registerProduct.solo    --registry="$registry" --fromDirectory="${STONES_HOME}/gemstone"
-
-# ---------------------------------------------------------
-# Project sets + repo updates
-# Ensures configured sets are synced via gsDevKit_stones project-set commands.
-# ---------------------------------------------------------
-information_banner "Syncing project sets under ${projectsRoot}"
-"${SCRIPT_DIR}/bvcPullProjects.sh"
-
-# ---------------------------------------------------------
-# Stones directory (where local stones live)
-# ---------------------------------------------------------
-information_banner "Ensuring stones directory: ${stonesDir}"
-[ -d "${stonesDir}" ] || mkdir -p "${stonesDir}"
-
-information_banner "Registering stones directory: ${stonesDir}"
-registerStonesDirectory.solo --registry="$registry" --stonesDirectory="${stonesDir}"
-
-# ---------------------------------------------------------
-# Create the stone (template: default_rowan3)
-# ---------------------------------------------------------
-information_banner "Creating stone '${stoneName}' (template: default_rowan3)"
-createStone.solo --registry="$registry" --template=default_rowan3 "$stoneName" "$gemStoneVersion"
 
 # The deployment is registered immediately after createStone.solo. Refresh the
 # DevKit connectors now, before later install tooling mutates the shell
 # environment (STONE, GEMSTONE_WORKSPACE, PATH, working directory, etc.).
 bvc_refresh_gt4gemstone_properties "${registry}"
 
-# macOS: disable native code (JIT) for this stone
-case "${OSTYPE:-}" in
-  darwin*)
-    warning_banner "Disabling Native Code for stone '${stoneName}' (macOS)"
-    printf '%s\n' "GEM_NATIVE_CODE_ENABLED=0;" >> "${stonesDir}/${stoneName}/gem.conf"
-    ;;
-esac
+# Configure once; a retry never appends duplicate configuration lines.
+if [ "$phase" = rowan:created ]; then
+  # macOS: disable native code (JIT) for this stone
+  case "${OSTYPE:-}" in
+    darwin*)
+      warning_banner "Disabling Native Code for stone '${stoneName}' (macOS)"
+      if ! grep -q '^GEM_NATIVE_CODE_ENABLED=0;' "${stonesDir}/${stoneName}/gem.conf"; then
+        printf '%s\n' "GEM_NATIVE_CODE_ENABLED=0;" >> "${stonesDir}/${stoneName}/gem.conf"
+      fi
+      ;;
+  esac
 
-# ---------------------------------------------------------
-# Environment for tooling (ROWAN) — MUST point to projects set
-# ---------------------------------------------------------
-information_banner "Setting ROWAN_PROJECTS_HOME=${gitDir_projects}"
+  # ---------------------------------------------------------
+  # Environment for tooling (ROWAN) — MUST point to projects set
+  # ---------------------------------------------------------
+  information_banner "Setting ROWAN_PROJECTS_HOME=${gitDir_projects}"
+  export ROWAN_PROJECTS_HOME="${gitDir_projects}"
+  updateCustomEnv.solo --registry="$registry" "$stoneName" \
+    --addKey=ROWAN_PROJECTS_HOME --value="$ROWAN_PROJECTS_HOME" --restart
+  save_phase rowan:configured
+fi
+# Package loaders need this even when configuration was completed previously.
 export ROWAN_PROJECTS_HOME="${gitDir_projects}"
-updateCustomEnv.solo --registry="$registry" "$stoneName" \
-  --addKey=ROWAN_PROJECTS_HOME --value="$ROWAN_PROJECTS_HOME" --restart
 
 # ---------------------------------------------------------
 # Start the stone & show status
 # ---------------------------------------------------------
 information_banner "Starting stone '${stoneName}'"
-startStone.solo --registry="$registry" "$stoneName" -b
+bvc_start_stone "$registry" "$stoneName"
 gslist.solo -l || true
 
 # ---------------------------------------------------------
@@ -178,18 +213,23 @@ gslist.solo -l || true
 # ---------------------------------------------------------
 cd "${stonesDir}/${stoneName}"
 
-# Jadeite requirement: turn on unicodeComparisonMode
-enableUnicodeCompares.topaz -lq
-
-# Install Dev Tools (from dev_tools set dir)
-information_banner "Installing dev tools projects from ${gitDir_devtools}"
-install_devtools_projects "${gitDir_devtools}"
+if [ "$phase" = rowan:configured ]; then
+  # Jadeite requirement: turn on unicodeComparisonMode
+  enableUnicodeCompares.topaz -lq
+  information_banner "Installing dev tools projects from ${gitDir_devtools}"
+  install_devtools_projects "${gitDir_devtools}"
+  save_phase rowan:devtools
+fi
 
 # Install User Projects (from projects set dir)
-information_banner "Installing user projects from ${gitDir_projects}"
-install_projects "${gitDir_projects}"
+if [ "$phase" = rowan:devtools ]; then
+  information_banner "Installing user projects from ${gitDir_projects}"
+  install_projects "${gitDir_projects}"
+  save_phase rowan:projects
+fi
 
 # Restore working directory
 cd "${workingDirectory}"
+rm -f "$installState"
 
 exit_0_banner "Stone '${stoneName}' created"
