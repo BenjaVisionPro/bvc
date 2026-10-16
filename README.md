@@ -94,39 +94,19 @@ bvc delete mygame-production
 
 These commands operate on the current machine, including when invoked on a
 production machine. Starting an existing deployment preserves its data. Repeated
-start/stop commands reuse completed installation steps. Existing Seaside stones
-created before Catalyst loading was added receive those missing steps on start.
+start/stop commands reuse completed installation steps.
 
-The existing Seaside installation path is available on first installation:
+New GemStone deployments use the `default_rowan3` template. The Rowan installer
+loads the developer tools, then Catalyst Foundation, Runtime and Process through
+their Rowan specifications. Project-specific hooks in
+`config/gemstone/installers/dev_tools.install` and `projects.install` can override
+the bundled recipes. The Runtime recipe expects its prerequisites to be
+provisioned separately.
 
-```sh
-bvc start mygame-production --with-seaside
-bvc build --with-seaside
-```
-
-`--with-seaside` does not convert an existing deployment. It uses the existing
-Seaside/GT installation recipe. Seaside DevKit stones do not currently support
-Rowan: their packages must load through Metacello, using GemStone-specific
-packages where appropriate. After Seaside and GT support, the recipe loads:
-
-1. Upstream GsApplicationTools Core and [Magritte3 Core](https://github.com/GsDevKit/Magritte3).
-2. NeoCSV and NeoJSON.
-3. Catalyst Foundation, Runtime and Process.
-
-Catalyst loads directly from each local checkout's `src` directory, using
-`gitlocal://<projects-directory>/<project>/src`, as in the Pharo loader.
-One sequential `config/gemstone/installers/loadProjects.topaz` script loads them
-all, mirroring the Pharo/GT loader while omitting Pharo/GT-only projects. Package
-and platform selection belongs in the project baselines. The script can be
-overridden per project. The shell invokes it once and records only whether the
-whole load succeeded.
-
-New Seaside installations also load GsApplicationTools `Core` through Metacello
-from `github://GsDevKit/gsApplicationTools/repository`, the upstream default used
-by Catalyst Runtime. The JupiterJones fork is neither cloned nor installed.
-Compatibility with a GemStone 3.7.5 Seaside DevKit stone still needs live testing.
-Completed Catalyst loads are not repeated. The Rowan Runtime recipe expects its
-prerequisites to be provisioned separately.
+Seaside and GemStone DevKit-stone builds are currently unsupported;
+`--with-seaside` has been removed. The DevKit/app still runs in Pharo/GT through
+`bvc run`, and `bvc build` starts both that app and the Rowan deployment.
+Existing stones are never converted automatically.
 
 Deletion requires typing the deployment name. For an intentional unattended
 deletion, use `bvc delete <deployment> --force`.
@@ -138,17 +118,11 @@ all startup scripts succeed. Failed builds can be retried. An existing incomplet
 DevKit directory is preserved: move it aside before retrying so any live work is
 not overwritten.
 
-A failed GemStone installation is marked incomplete. For Rowan deployments,
-rerunning `bvc start <deployment>` or `bvc build` resumes configuration and package
-loading from the last completed step, preserving the stone and its data. The
+A failed GemStone installation is marked incomplete. Rerunning
+`bvc start <deployment>` or `bvc build` resumes configuration and package loading from the last completed step, preserving the stone and its data. The
 failed step is retried, so custom installer hooks must support being rerun.
 Older empty markers on existing Rowan stones resume configuration and loading.
-Seaside project loading is one operation. Success is recorded in the stone's
-`.bvc-catalyst-loaded` file. A failure leaves the deployment incomplete; correct
-the source or dependency and rerun `bvc start <deployment>` (or `bvc build` for
-the configured deployment). The whole load script is retried, preserving the
-stone and its data; there are no per-project checkpoints.
-Incomplete stone creation and earlier Seaside/GT bootstrap failures still require
+Incomplete stone creation and unsupported installation markers require
 inspection before resuming; they are never silently recreated or treated as ready.
 
 Concurrent operations on the same installation are rejected with a lock path.

@@ -22,6 +22,9 @@ with (root / 'events').open('a') as f:
     f.write(json.dumps([name, args]) + '\n')
 if os.environ.get('FAIL_COMMAND') == name:
     sys.exit(42)
+if name == 'installProject.stone' and os.environ.get('FAIL_PROJECT'):
+    if args[0].endswith('/' + os.environ['FAIL_PROJECT'] + '.ston'):
+        sys.exit(43)
 def option(key):
     return next((a.split('=', 1)[1] for a in args if a.startswith(key + '=')), None)
 if name == 'registryReport.solo':
@@ -43,13 +46,6 @@ elif name == 'createStone.solo':
     (d / 'system.conf').touch()
     (d / '.GDKStoneSpec.ston').write_text(
         "GDKStoneSpec { #stoneDirectorySpecName : '%s' }\n" % option('--template'))
-elif name == 'topaz':
-    script = pathlib.Path(args[args.index('-S') + 1])
-    if script.name == 'loadProjects.topaz':
-        with (root / 'events').open('a') as f:
-            f.write(json.dumps(['catalyst-load', [os.environ['PROJECTS_ROOT']]]) + '\n')
-    if script.name == os.environ.get('FAIL_TOPAZ_SCRIPT'):
-        sys.exit(43)
 elif name == 'gslist.solo':
     for p in sorted((root / 'running').iterdir()):
         print('exists 3.7.5 tester 123 456 Oct 12 10:00 Stone ' + p.name)
@@ -123,8 +119,9 @@ class CliTests(unittest.TestCase):
                     'downloadGemStone.solo', 'updateClientLibs.solo', 'registerProduct.solo',
                     'registerStonesDirectory.solo', 'createStone.solo', 'updateCustomEnv.solo',
                     'startStone.solo', 'stopStone.solo', 'startNetldi.solo', 'stopNetldi.solo',
-                    'gslist.solo', 'deleteStone.solo', 'topaz',
+                    'gslist.solo', 'deleteStone.solo',
                     'enableUnicodeCompares.topaz', 'testInstallDevtools', 'testInstallProjects',
+                    'installProject.stone',
                     'curl', 'unzip']
         for name in commands:
             self.write_exe(self.tools / name, MOCK)
@@ -207,6 +204,7 @@ class CliTests(unittest.TestCase):
 
     def test_removed_commands_and_invalid_arguments_fail(self):
         for args in [('create',), ('devkit',), ('run', 'anything'), ('build', 'anything'),
+                     ('build', '--with-seaside'), ('start', 'web', '--with-seaside'),
                      ('stop',), ('start', '../bad'), ('delete', '../bad', '--force')]:
             self.cli(*args, ok=False)
         self.assertEqual(self.events(), [])
@@ -237,6 +235,7 @@ class CliTests(unittest.TestCase):
         self.cli('build', GEMSTONE_STONE_NAME='my-production')
         self.assertTrue((self.root / 'registered/my-production').exists())
         self.assertEqual(len(self.events('testInstallProjects')), 1)
+        self.assertIn('--template=default_rowan3', self.events('createStone.solo')[0][1])
         self.assertTrue((self.root / 'launches').exists())
         self.cli('build', GEMSTONE_STONE_NAME='my-production')
         self.assertEqual(len(self.events('createStone.solo')), 1)
@@ -298,6 +297,51 @@ class CliTests(unittest.TestCase):
         self.assertFalse(marker.exists())
         self.assertTrue((self.root / 'launches').exists())
 
+    def use_bundled_installers(self):
+        for name in ('dev_tools.install', 'projects.install'):
+            (self.project / 'config/gemstone/installers' / name).unlink()
+
+    def installed_projects(self):
+        return [Path(args[0]).stem for _, args in self.events('installProject.stone')]
+
+    def test_bundled_installers_use_gsdevkit_without_interactive_debugger(self):
+        self.use_bundled_installers()
+        self.cli('start', 'production')
+        self.assertEqual(self.installed_projects(), [
+            'RemoteServiceReplication', 'RowanClientServices', 'Sparkle',
+            'gtoolkit-wireencoding', 'gt4gemstone', 'gtoolkit-remote',
+            'CatalystFoundation', 'CatalystRuntime', 'CatalystProcess'])
+        for _, args in self.events('installProject.stone'):
+            self.assertNotIn('-D', args)
+            self.assertNotIn('--debug', args)
+            self.assertTrue(any(a.startswith('--projectsHome=') for a in args))
+        self.assertIn('--alias=RowanClientServicesV3',
+                      self.events('installProject.stone')[1][1])
+
+    def test_gt_load_failure_stops_before_catalyst_and_remains_retryable(self):
+        self.use_bundled_installers()
+        self.cli('start', 'production', FAIL_PROJECT='gtoolkit-wireencoding', ok=False)
+        marker = self.project / 'stones/.production.bvc-installing'
+        self.assertEqual(marker.read_text().strip(), 'rowan:configured')
+        self.assertEqual(self.installed_projects()[-1], 'gtoolkit-wireencoding')
+        self.assertNotIn('CatalystFoundation', self.installed_projects())
+        self.cli('start', 'production')
+        self.assertFalse(marker.exists())
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+        self.assertEqual(self.installed_projects()[-1], 'CatalystProcess')
+
+    def test_catalyst_failure_stops_and_retry_preserves_completed_devtools(self):
+        self.use_bundled_installers()
+        self.cli('start', 'production', FAIL_PROJECT='CatalystRuntime', ok=False)
+        marker = self.project / 'stones/.production.bvc-installing'
+        self.assertEqual(marker.read_text().strip(), 'rowan:devtools')
+        self.assertNotIn('CatalystProcess', self.installed_projects())
+        self.cli('start', 'production')
+        self.assertFalse(marker.exists())
+        self.assertEqual(self.installed_projects().count('gt4gemstone'), 1)
+        self.assertEqual(self.installed_projects().count('CatalystRuntime'), 2)
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+
     def test_legacy_empty_marker_resumes_after_stone_start(self):
         self.cli('start', 'bvc_dev', FAIL_COMMAND='enableUnicodeCompares.topaz', ok=False)
         marker = self.project / 'stones/.bvc_dev.bvc-installing'
@@ -324,77 +368,21 @@ class CliTests(unittest.TestCase):
         self.assertEqual(self.events('testInstallProjects'), [])
         self.assertEqual(len(self.events('createStone.solo')), 1)
 
-    def prepare_seaside_scripts(self):
-        for project in ('CatalystFoundation', 'CatalystRuntime', 'CatalystProcess'):
-            baseline = self.project / 'git_root/projects' / project / 'src' / ('BaselineOf' + project)
-            baseline.mkdir(parents=True)
-            (baseline / ('BaselineOf' + project + '.class.st')).touch()
-        scripts = self.project / 'git_root/dev_tools/gt4gemstone/scripts'
-        (scripts / 'seaside').mkdir(parents=True)
-        (scripts / 'release').mkdir()
-        for name in ('loginSystemUser.topaz', 'loginDataCurator.topaz',
-                     'seaside/seaside-permissions.topaz', 'seaside/installSeaside.topaz'):
-            (scripts / name).touch()
-        self.write_exe(scripts / 'release/package-release.sh', r'''
-import os, pathlib
-release = pathlib.Path(os.environ['GEMSTONE_WORKSPACE']) / os.environ['RELEASED_PACKAGE_GEMSTONE_NAME']
-(release / 'seaside').mkdir(parents=True)
-(release / 'loginDataCurator.topaz').touch()
-for name in ('patch-dictionaries.sh', 'inputRelease.sh'):
-    script = release / 'seaside' / name
-    script.write_text('#!/bin/sh\nexit 0\n')
-    script.chmod(0o755)
-for name in ('gt-symbol-dictionary.topaz', 'seaside-gt-patches.topaz'):
-    (release / 'seaside' / name).touch()
-''')
-
-    def test_seaside_uses_one_project_loader_after_gt_without_rowan_hooks(self):
-        self.prepare_seaside_scripts()
-        self.cli('start', 'web', '--with-seaside')
-        scripts = [Path(args[args.index('-S') + 1]).name
-                   for _, args in self.events('topaz')]
-        self.assertEqual(scripts[-2:], ['seaside-gt-patches.topaz', 'loadProjects.topaz'])
-        self.assertEqual(self.events('catalyst-load'),
-                         [['catalyst-load', [str(self.project / 'git_root/projects')]]])
-        self.assertEqual(self.events('testInstallProjects'), [])
-        self.assertEqual(self.events('testInstallDevtools'), [])
-        self.assertFalse((self.project / 'stones/.web.bvc-installing').exists())
-        before = len(self.events('topaz'))
-        self.cli('start', 'web')
-        self.assertEqual(len(self.events('topaz')), before)
-
-    def test_seaside_load_failure_retries_whole_script_without_recreating(self):
-        self.prepare_seaside_scripts()
-        self.cli('start', 'web', '--with-seaside', FAIL_TOPAZ_SCRIPT='loadProjects.topaz', ok=False)
-        stone = self.project / 'stones/web'
-        (stone / 'user-data').write_text('preserve')
-        self.assertFalse((stone / '.bvc-catalyst-loaded').exists())
-        self.assertEqual((self.project / 'stones/.web.bvc-installing').read_text().strip(),
-                         'seaside:projects')
-        self.cli('start', 'web')
-        self.assertEqual(len(self.events('catalyst-load')), 2)
-        self.assertTrue((stone / '.bvc-catalyst-loaded').exists())
-        self.assertEqual(len(self.events('createStone.solo')), 1)
-        self.assertEqual((stone / 'user-data').read_text(), 'preserve')
-        self.assertFalse((self.project / 'stones/.web.bvc-installing').exists())
-
-    def test_existing_seaside_stone_acquires_missing_catalyst_projects(self):
-        self.prepare_seaside_scripts()
-        self.cli('start', 'web', '--with-seaside')
-        (self.project / 'stones/web/.bvc-catalyst-loaded').unlink()
-        (self.root / 'events').write_text('')
-        self.cli('start', 'web')
-        self.assertEqual(self.events('createStone.solo'), [])
-        self.assertEqual(len(self.events('catalyst-load')), 1)
-        scripts = [Path(args[args.index('-S') + 1]).name
-                   for _, args in self.events('topaz')]
-        self.assertNotIn('installSeaside.topaz', scripts)
-
-    def test_incomplete_seaside_bootstrap_is_not_mistaken_for_catalyst_retry(self):
-        self.prepare_seaside_scripts()
-        self.cli('start', 'web', '--with-seaside', FAIL_TOPAZ_SCRIPT='installSeaside.topaz', ok=False)
-        self.cli('start', 'web', ok=False)
-        self.assertEqual(self.events('catalyst-load'), [])
+    def test_unsupported_installation_marker_preserves_stone(self):
+        self.cli('start', 'bvc_dev', FAIL_COMMAND='enableUnicodeCompares.topaz', ok=False)
+        marker = self.project / 'stones/.bvc_dev.bvc-installing'
+        data = self.project / 'stones/bvc_dev/user-data'
+        data.write_text('preserve')
+        before = [e for e in self.events() if e[0] != 'registryReport.solo']
+        for phase in ('seaside', 'seaside:projects'):
+            with self.subTest(phase=phase):
+                marker.write_text(phase)
+                result = self.cli('start', 'bvc_dev', ok=False)
+                self.assertIn('Only Rowan installations can be resumed', result.stderr)
+                self.assertEqual(marker.read_text(), phase)
+                self.assertEqual(data.read_text(), 'preserve')
+                self.assertEqual(
+                    [e for e in self.events() if e[0] != 'registryReport.solo'], before)
 
     def test_interrupted_stone_creation_is_not_overwritten(self):
         self.cli('start', 'bvc_dev', FAIL_COMMAND='enableUnicodeCompares.topaz', ok=False)

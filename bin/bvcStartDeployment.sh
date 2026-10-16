@@ -15,20 +15,15 @@ information_banner "Start Catalyst deployment"
 usage() {
   cat 1>&2 <<EOF_USAGE
 Usage:
-  $(prog_basename "$PROGNAME") <deploymentName> [--with-seaside]
-
-Notes:
-  --with-seaside only affects first install when the deployment does not yet exist.
+  $(prog_basename "$PROGNAME") <deploymentName>
 EOF_USAGE
   exit "${1:-1}"
 }
 
-with_seaside=0
 deploymentName=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --with-seaside) with_seaside=1 ;;
     --help|-h) usage 0 ;;
     --*) error_banner "Unknown option for start: $1"; usage ;;
     *)
@@ -53,13 +48,8 @@ ensure_registry_exists "$DEFAULT_REGISTRY"
 if [ -f "${stones_dir}/.${deploymentName}.bvc-installing" ]; then
   install_phase=$(cat "${stones_dir}/.${deploymentName}.bvc-installing")
   case "$install_phase" in
-    seaside:projects)
-      bvc_start_stone "$DEFAULT_REGISTRY" "$deploymentName"
-      "${SCRIPT_DIR}/installSeasideProjects.sh" "$deploymentName"
-      exit_0_banner "Deployment '${deploymentName}' installed and running" ;;
-    seaside*) exit_1_banner "Seaside installation '${deploymentName}' is incomplete and requires inspection before retrying. Data has been preserved." ;;
     ''|rowan:*) ;;
-    *) exit_1_banner "Unknown installation state for '${deploymentName}': ${install_phase}" ;;
+    *) exit_1_banner "Unsupported installation state for '${deploymentName}': ${install_phase}. Only Rowan installations can be resumed. Data has been preserved." ;;
   esac
   # The Rowan installer resumes its own recorded steps, including legacy empty
   # markers. It verifies the stone template before touching an existing stone.
@@ -71,17 +61,8 @@ fi
 if deployment_exists "$DEFAULT_REGISTRY" "$deploymentName"; then
   information_banner "Deployment '${deploymentName}' exists; starting it."
   bvc_start_stone "$DEFAULT_REGISTRY" "$deploymentName"
-  if grep -Eq "#stoneDirectorySpecName[[:space:]]*:[[:space:]]*'default_seaside'" \
-      "${stones_dir}/${deploymentName}/.GDKStoneSpec.ston" 2>/dev/null; then
-    "${SCRIPT_DIR}/installSeasideProjects.sh" "$deploymentName"
-  fi
   exit_0_banner "Deployment '${deploymentName}' started"
 fi
 
-if [ "$with_seaside" -eq 1 ]; then
-  information_banner "Deployment '${deploymentName}' not found; installing devkit stone with Seaside path."
-  "${SCRIPT_DIR}/installSeasideDeploymentStone.sh" "$deploymentName"
-else
-  information_banner "Deployment '${deploymentName}' not found; installing rowan stone."
-  "${SCRIPT_DIR}/installDeploymentStone.sh" "$deploymentName"
-fi
+information_banner "Deployment '${deploymentName}' not found; installing Rowan stone."
+"${SCRIPT_DIR}/installDeploymentStone.sh" "$deploymentName"

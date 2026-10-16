@@ -1,21 +1,22 @@
-# config/gemstone/installers/projects.install.sh
+# GsDevKit handles Rowan resolution, loading, initialization and commit.
+# Keep unattended installs out of the interactive Topaz debugger.
 # Sourced helper. Defines: install_projects "<gitDir>"
 
 install_projects() {
 
-  gitDir="$1"
+  local gitDir="$1"
   : "${gitDir:?gitDir is required}"
 
   information_banner "Installing Catalyst Foundation"
   installProject.stone "file:${gitDir}/CatalystFoundation/rowan/specs/CatalystFoundation.ston" \
-    --projectsHome="${gitDir}" -D
+    --projectsHome="${gitDir}" || return
 
   information_banner "Installing Catalyst Runtime"
   installProject.stone "file:${gitDir}/CatalystRuntime/rowan/specs/CatalystRuntime.ston" \
-    --projectsHome="${gitDir}" -D
+    --projectsHome="${gitDir}" || return
 
   information_banner "Installing Catalyst Process"
   installProject.stone "file:${gitDir}/CatalystProcess/rowan/specs/CatalystProcess.ston" \
-    --projectsHome="${gitDir}" -D
+    --projectsHome="${gitDir}" || return
 
 }

@@ -18,8 +18,8 @@ Commands:
   init [directory] [--template=NAME]
       Initialise the current directory, or create and initialise directory.
 
-  build [--with-seaside]
-      Build the DevKit/app and install GemStone if needed, then run both.
+  build
+      Build the DevKit/app and install Rowan GemStone if needed, then run both.
 
   run
       Build the DevKit/app if needed, then launch it. Does not start GemStone.
@@ -27,9 +27,8 @@ Commands:
   list
       List registered deployments and currently running stones.
 
-  start <deploymentName> [--with-seaside]
-      Start a deployment, building it first if needed.
-      --with-seaside only affects build runs and installs seaside
+  start <deploymentName>
+      Start a deployment, building a Rowan stone first if needed.
 
   stop <deploymentName>
       Stop a deployment.
@@ -44,7 +43,7 @@ Examples:
   bvc build
   bvc run
   bvc list
-  bvc start tgc-prod-test --with-seaside
+  bvc start tgc-prod-test
   bvc stop tgc-prod-test
   bvc delete tgc-prod-test
 
