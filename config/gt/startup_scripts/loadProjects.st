@@ -6,6 +6,13 @@ projectsRoot := 'gitlocal://', (OSPlatform current environment at: 'PROJECTS_ROO
 Transcript show: 'LOADING User Projects FROM ', 
 	(projectsRoot ifNil: ['<none>']).
 
+"Keep the Futures code and existing instances from the GT release together.
+Loading a newer Futures over that image can leave AsyncMutex instances with
+locks that its new methods no longer support. Register explicit locks because
+the GT release need not register its bundled projects in Metacello."
+Metacello new baseline: 'FuturesCore'; lock.
+Metacello new baseline: 'Futures'; lock.
+
 Metacello new
         baseline: 'SpartaSkia';
         repository: 'tonel:///opt/git/JupiterJones/gt-blur-workspace/sparta/src';
