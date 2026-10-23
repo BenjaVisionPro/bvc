@@ -76,6 +76,12 @@ Metacello new
 	load.
 
 Metacello new
+	repository: projectsRoot, '/CatalystConnect/src';
+	baseline: 'CatalystConnect';
+	onConflictUseLoaded;
+	load: #('reference' 'tests').
+
+Metacello new
 	repository: projectsRoot, '/CatalystProcess/src';
 	baseline: 'CatalystProcess';
 	onConflictUseLoaded;
