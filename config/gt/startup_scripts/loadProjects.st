@@ -87,4 +87,12 @@ Metacello new
 	onConflictUseLoaded;
 	load.
 
+"Groups development core, Runtime integration, GT views, tests and examples.
+This GT-only load does not add Groups to the GemStone installer."
+Metacello new
+	repository: projectsRoot, '/CatalystGroups/src';
+	baseline: 'CatalystGroups';
+	onConflictUseLoaded;
+	load: #('Development').
+
 2 seconds wait

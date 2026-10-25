@@ -156,6 +156,18 @@ provide a project loader at `config/gt/startup_scripts/loadProjects.st` or adjus
 those dependencies for the build machine. Runtime downloads and repository
 branches are not yet locked to reproducible revisions.
 
+The bundled project set includes `CatalystGroups` from
+`BenjaVision-Catalyst/catalyst-groups`. The GT loader loads its `Development`
+baseline group after Runtime and Process, including the Groups core, local Runtime
+integration, inspector views, tests and examples. Groups is not added to the
+GemStone installer. Existing project-specific project sets or startup scripts
+must include the equivalent entries if they replace the bundled configuration.
+
+Before replacing a development image, recover its pending source edits through
+GT into an independent clean checkout, verify the export against the live image,
+then test, commit and push. Keep the current image open until recovery is verified;
+updating a project set does not preserve unsaved image source by itself.
+
 ## Previous command names
 
 `bvc init <directory>` replaces `bvc create <directory>`. `bvc run` replaces
