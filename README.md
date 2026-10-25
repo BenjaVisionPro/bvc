@@ -1,9 +1,25 @@
-# bvc
+# BVC — BenjaVision Catalyst
 
-BenjaVision Catalyst (`bvc`) is a small command line tool for building and running
-Catalyst applications. The DevKit is the application and local server. GemStone
-provides persistent deployments, installed with the same procedure on development
-and production machines.
+BVC is the command line installation and project tool for developers building
+Catalyst applications. It takes you from a project directory to a running local
+GT/Pharo DevKit, and provides separate commands for configured GemStone
+deployments. Use it when you want a repeatable entry point for setting up,
+building, and running Catalyst while keeping your project's configuration in
+your own repository.
+
+## Features
+
+- Bootstrap Catalyst tooling with a configurable installation prefix.
+- Initialise projects from templates without replacing existing project files.
+- Build and run a local DevKit; reuse an application that is already running.
+- Install, start, list, stop, and deliberately delete GemStone deployments.
+- Configure project sets, startup scripts, and environment defaults per project.
+- Detect concurrent operations and retain interrupted setup for a retry.
+
+BVC assembles the components selected by your configuration. It does not make
+an unfinished component production-ready or automatically build every C++,
+Unreal, or Swift integration. Some bundled loader paths still need
+machine-specific configuration, as described below.
 
 ## Install
 
@@ -30,12 +46,14 @@ so a successful bootstrap continues without opening another shell.
 ```sh
 bvc init MyGame
 cd MyGame
-bvc build
+bvc run
 ```
 
-This initializes the project, installs and starts its configured GemStone
-deployment, and builds and launches the DevKit/app. Existing installations are
-reused. Run commands from the project directory.
+This initializes the project and builds and launches the GT/Pharo DevKit/app
+without installing or starting a GemStone deployment. Existing installations
+are reused. Run commands from the project directory. Use `bvc build` when you
+also want to install/start the configured GemStone deployment; individual
+components still need their own GemStone qualification.
 
 ## Commands
 
