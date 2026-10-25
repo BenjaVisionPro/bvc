@@ -44,7 +44,7 @@ GDKProjectSet {
 				'origin' : 'git@github.com:BenjaVisionPro/CatalystProcess.git'
 			}
 		},
-		'CatalystGroups' : {
+		'catalyst-groups' : {
 			'revision' : 'main',
 			'gitUrls' : {
 				'origin' : 'git@github.com:BenjaVision-Catalyst/catalyst-groups.git'

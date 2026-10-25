@@ -156,10 +156,10 @@ provide a project loader at `config/gt/startup_scripts/loadProjects.st` or adjus
 those dependencies for the build machine. Runtime downloads and repository
 branches are not yet locked to reproducible revisions.
 
-The bundled project set includes `CatalystGroups` from
-`BenjaVision-Catalyst/catalyst-groups`. The GT loader loads its `Development`
-baseline group after Runtime and Process, including the Groups core, local Runtime
-integration, inspector views, tests and examples. Groups is not added to the
+The bundled project set uses `catalyst-groups` as the checkout directory for
+`BenjaVision-Catalyst/catalyst-groups`. The GT loader loads the `CatalystGroups`
+baseline's `Development` group after Runtime and Process, including the Groups
+core, local Runtime integration, inspector views, tests and examples. Groups is not added to the
 GemStone installer. Existing project-specific project sets or startup scripts
 must include the equivalent entries if they replace the bundled configuration.
 

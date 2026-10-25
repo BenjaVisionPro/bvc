@@ -90,7 +90,7 @@ Metacello new
 "Groups development core, Runtime integration, GT views, tests and examples.
 This GT-only load does not add Groups to the GemStone installer."
 Metacello new
-	repository: projectsRoot, '/CatalystGroups/src';
+	repository: projectsRoot, '/catalyst-groups/src';
 	baseline: 'CatalystGroups';
 	onConflictUseLoaded;
 	load: #('Development').
