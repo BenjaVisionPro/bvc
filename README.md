@@ -60,9 +60,9 @@ components still need their own GemStone qualification.
 | Command | Behavior |
 | --- | --- |
 | `bvc init [directory]` | Initialize the current directory, or create and initialize the supplied directory. |
-| `bvc build` | Build the DevKit/app and install the configured GemStone deployment if needed, then run both. |
+| `bvc build [--with-seaside]` | Build the DevKit/app and install the configured GemStone deployment if needed, then run both. |
 | `bvc run` | Build the DevKit/app if missing, then launch it. Does not install or start a GemStone deployment. |
-| `bvc start <deployment>` | Install a GemStone deployment if missing, then start it. |
+| `bvc start <deployment> [--with-seaside]` | Install a GemStone deployment if missing, then start it. |
 | `bvc stop <deployment>` | Stop the GemStone deployment and its netldi. Does not stop the DevKit/app. |
 | `bvc list` | List registered GemStone deployments and process state. |
 | `bvc delete <deployment>` | Delete a GemStone deployment and its data, with confirmation. |
@@ -121,10 +121,46 @@ their Rowan specifications. Project-specific hooks in
 the bundled recipes. The Runtime recipe expects its prerequisites to be
 provisioned separately.
 
-Seaside and GemStone DevKit-stone builds are currently unsupported;
-`--with-seaside` has been removed. The DevKit/app still runs in Pharo/GT through
-`bvc run`, and `bvc build` starts both that app and the Rowan deployment.
-Existing stones are never converted automatically.
+For the temporary Seaside/GT GemStone DevKit path:
+
+```sh
+bvc start foundation-dev --with-seaside
+# Or build and run the Pharo/GT app as well:
+bvc build --with-seaside
+```
+
+This creates a `default_seaside` stone, installs Seaside and GT GemStone support,
+then uses Metacello to load Magritte and Foundation's `foundation-portable` group.
+The group contains the shared model and configuration packages, excluding GT UI
+and the mixed UI examples package. Runtime and Process are not loaded by this
+temporary recipe. The default deployment path continues to use Rowan.
+
+The portable recipe bootstraps a pinned GemStone Tonel reader and declares a
+pinned GemStone Magritte dependency in Foundation's baseline. It checks identity,
+description discovery, invalid-value rejection, configuration serialization and
+persistence after reconnecting. A successful load writes
+`stones/<deployment>/portable-foundation-validation.ston`.
+The recorded [GemStone 3.7.5 validation](docs/validation/seaside-foundation-2026-10-27.json)
+also includes the CLI and GT regression results. It qualifies portable loading;
+the upstream Tonel port's optional Cypress writer and GemStone source export
+remain outside this qualification.
+
+This is a temporary compatibility path. The recipe bridges the pinned Tonel
+port's repository naming and Gofer directory-reader conventions. Foundation
+selects Magritte's model packages directly to avoid the historical Magritte3
+baseline's Seaside31 dependency. Retries reload the local Foundation source
+instead of trusting Tonel's fabricated package version names.
+
+Project hooks at `config/gemstone/installers/seaside_dev_tools.install` and
+`seaside_projects.install` can override the bundled recipes. The project loader
+uses `config/gemstone/load-portable-foundation.topaz`; set
+`BVC_FOUNDATION_REPOSITORY` to select a different local Metacello repository.
+The default is the cloned `git_root/projects/CatalystFoundation/src` repository.
+
+The option selects installation only. Starting an already completed stone
+preserves its type and data. Resume an incomplete Seaside installation with
+`--with-seaside`; bvc refuses to resume it through the Rowan installer, or vice
+versa. Existing stones are never converted automatically.
 
 Deletion requires typing the deployment name. For an intentional unattended
 deletion, use `bvc delete <deployment> --force`.
@@ -139,6 +175,9 @@ not overwritten.
 A failed GemStone installation is marked incomplete. Rerunning
 `bvc start <deployment>` or `bvc build` resumes configuration and package loading from the last completed step, preserving the stone and its data. The
 failed step is retried, so custom installer hooks must support being rerun.
+For Seaside installations, repeat `--with-seaside`. Completed Seaside and GT
+bootstrap steps are recorded separately so a failed Foundation load does not
+repeat them. The GT release package is staged privately before being published.
 Older empty markers on existing Rowan stones resume configuration and loading.
 Incomplete stone creation and unsupported installation markers require
 inspection before resuming; they are never silently recreated or treated as ready.

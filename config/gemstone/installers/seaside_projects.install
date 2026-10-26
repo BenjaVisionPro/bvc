@@ -1,0 +1,7 @@
+# Temporary Metacello route. Rowan deployment installers are separate.
+install_seaside_projects() {
+  local recipe
+  recipe=$(conf_resolve 'gemstone/load-portable-foundation.topaz')
+  topaz -l -I "${gitDir_devtools}/gt4gemstone/scripts/loginDataCurator.topaz" \
+    -S "$recipe" < /dev/zero
+}

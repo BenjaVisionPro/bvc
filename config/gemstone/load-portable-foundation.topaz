@@ -1,0 +1,118 @@
+iferr 1 stk
+iferr 2 stack
+iferr 3 exit
+
+expectvalue true
+run
+GsDeployer deploy: [
+  Metacello new
+    baseline: 'Tonel';
+    repository: 'github://GsDevKit/tonel:d26764f6dfa939269fe06f2a0034d83940bf86b2/src';
+    onLock: [ :ex | ex honor ];
+    load: #('monticello') ].
+true
+%
+commit
+
+## Bridge Gofer's .mcz assumption for the pinned directory-based Tonel reader.
+category: 'bvc-compatibility'
+method: TonelMCRepository
+goferVersionFrom: aVersionReference
+  ^ self readableFileNames
+    detect: [ :name |
+      (self versionInfoForPackageDirectory: (self fileDirectoryOn: name)) name = aVersionReference name ]
+    ifFound: [ :name | (TonelMCReader on: self directory fileName: name) version ]
+    ifNone: [ self error: 'Tonel package not found: ', aVersionReference name ]
+%
+
+category: 'bvc-compatibility'
+method: TonelMCRepository
+packageDescriptionFromPackageDirectory: packageDirectory
+  | name |
+  name := self fileUtils directoryName: packageDirectory.
+  ^ {name. 'bvc'. (System gemEnvironmentVariable: 'BVC_FOUNDATION_SOURCE_VERSION') asInteger. name}
+%
+
+## Distinguish local source revisions instead of fabricating a constant version.
+category: 'bvc-compatibility'
+method: TonelMCReader
+loadVersionInfo
+  info := MCVersionInfo
+    name: self packageNameFromPackageDirectory, '-bvc.', (System gemEnvironmentVariable: 'BVC_FOUNDATION_SOURCE_VERSION')
+    id: UUID new
+    message: 'BVC portable Foundation source fingerprint'
+    date: Date today
+    time: Time now
+    author: 'bvc'
+    ancestors: #()
+    stepChildren: #()
+%
+
+expectvalue true
+run
+"This pinned Tonel port names the repository TonelMCRepository; current
+Metacello's GemStone platform looks it up as TonelRepository."
+Smalltalk at: #TonelRepository ifAbsent: [
+  UserGlobals at: #TonelRepository put: (Smalltalk at: #TonelMCRepository) ].
+MCRepositoryGroup default removeRepository: nil.
+GsDeployer deploy: [
+  Metacello new
+    baseline: 'CatalystFoundation';
+    onDowngradeUseIncoming;
+    repository: (System gemEnvironmentVariable: 'BVC_FOUNDATION_REPOSITORY');
+    onLock: [ :ex | ex honor ];
+    load: #('foundation-portable') ].
+true
+%
+commit
+
+expectvalue true
+run
+| model descriptions config encoded decoded validationFailed |
+model := CFMagritteEditorExample new.
+model identifier isNil ifTrue: [ self error: 'Missing Foundation identity' ].
+descriptions := model magritteDescription.
+descriptions isEmpty ifTrue: [ self error: 'Missing Magritte descriptions' ].
+descriptions validate: model.
+model priority: 200.
+validationFailed := false.
+[ descriptions validate: model ] on: MAValidationError do: [ :error | validationFailed := true ].
+validationFailed ifFalse: [ self error: 'Magritte did not reject invalid priority' ].
+config := CFConfiguration new.
+encoded := CFConfigurationCodec toStringPretty: config.
+decoded := CFConfigurationCodec fromString: encoded.
+decoded class = CFConfiguration ifFalse: [ self error: 'Configuration round trip changed class' ].
+decoded identifier = config identifier ifFalse: [ self error: 'Configuration round trip changed identity' ].
+#(CFAtelierElement CFMaDetailPresentation CFConfigurationExamples BlSpace) do: [ :name |
+  (Smalltalk includesKey: name) ifTrue: [ self error: 'Unexpected GT UI class: ', name asString ] ].
+UserGlobals at: #BVCFoundationPortableProbe put: {config identifier. encoded}.
+true
+%
+commit
+logout
+login
+
+expectvalue true
+run
+| probe decoded report file |
+probe := UserGlobals at: #BVCFoundationPortableProbe.
+decoded := CFConfigurationCodec fromString: probe second.
+decoded identifier = probe first ifFalse: [ self error: 'Persistent configuration probe failed' ].
+report := Dictionary new
+  at: 'stone' put: (System gemEnvironmentVariable: 'STONE');
+  at: 'group' put: 'foundation-portable';
+  at: 'magritte' put: '8d1fd386365b223d3f25c70d7d913d73075f545b';
+  at: 'identity' put: true;
+  at: 'descriptionDiscovery' put: true;
+  at: 'validationRejectsInvalidValue' put: true;
+  at: 'configurationRoundTrip' put: true;
+  at: 'reconnectPersistence' put: true;
+  at: 'uiExamplesExcluded' put: true;
+  yourself.
+file := GsFile openWriteOnServer: (System gemEnvironmentVariable: 'BVC_FOUNDATION_REPORT').
+[ file nextPutAll: (STON toString: report) ] ensure: [ file close ].
+true
+%
+commit
+errorCount
+exit

@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-27",
+  "status": "passed",
+  "gemstone": "3.7.5",
+  "platform": "arm64.Darwin",
+  "stone": "bvc_foundation_portable",
+  "registry": "bvc_foundation_trial",
+  "loadGroup": "foundation-portable",
+  "foundationPackages": [
+    "BVC-Foundation-Core",
+    "BVC-Foundation-Magritte-Core",
+    "BVC-Foundation-Config-Core",
+    "BVC-Foundation-Config-Validation",
+    "BVC-Foundation-Config-Library",
+    "BVC-Foundation-Config-Planner"
+  ],
+  "magrittePackages": [
+    "Magritte-Model",
+    "Magritte-GemStone-Model"
+  ],
+  "magritteRevision": "8d1fd386365b223d3f25c70d7d913d73075f545b",
+  "tonelRevision": "d26764f6dfa939269fe06f2a0034d83940bf86b2",
+  "gemstoneChecks": {
+    "descriptionDiscovery": true,
+    "identity": true,
+    "validationRejectsInvalidValue": true,
+    "configurationRoundTrip": true,
+    "reconnectPersistence": true,
+    "uiExamplesExcluded": true
+  },
+  "gtRegression": {
+    "examplesPassed": [
+      "validConfiguration",
+      "invalidConfigurationHasStructuredIssue",
+      "serializationRoundTrip",
+      "serializationRoundTripRestoresConfigurationParents",
+      "plannerFindsToManyPlacement",
+      "plannerAppliesToOneReplacementPlan",
+      "editingProjectionPreservesNormalMagritteCommit",
+      "editingProjectionIncludesNestedStagedValuesWithoutApplying",
+      "editingProjectionExcludesRemovedNestedConfiguration"
+    ],
+    "readOnlyCompatibility": true,
+    "status": "passed"
+  },
+  "cliTests": {
+    "run": 39,
+    "failures": 0
+  },
+  "probeSha256": "d5cd24f99519427928401ab1a9d6f8a8d61ed93abfb18db1bc0934c9e0a21696",
+  "limits": [
+    "This qualifies the temporary Seaside/Metacello loader, not the Rowan deployment loader.",
+    "The upstream Tonel port reports an unavailable optional Cypress writer. GemStone source export is not qualified."
+  ],
+  "sourceVerification": {
+    "packages": 34,
+    "mismatches": 0,
+    "mechanism": "GT MCP Monticello snapshot and TonelReader definition comparison"
+  },
+  "foundationCommit": "139460b38439f097983aee94e8a898b8da244bdc",
+  "reuseExistingStone": "passed: a second start reused the running stone without loading packages",
+  "stoppedDiagnosticStone": "bvc_foundation_dev",
+  "validationReport": "stones/bvc_foundation_portable/portable-foundation-validation.ston",
+  "sourceVersion": 3534415787
+}

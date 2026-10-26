@@ -1,0 +1,33 @@
+# Seaside/GT bootstrap, with each completed step recorded by the caller.
+gtScriptsDir="${gitDir_devtools}/gt4gemstone/scripts"
+seaside_topaz() {
+  topaz -l -I "${gtScriptsDir}/login$1.topaz" -S "$2" < /dev/zero
+}
+seaside_permissions() {
+  enableUnicodeCompares.topaz -lq
+  seaside_topaz SystemUser "${gtScriptsDir}/seaside/seaside-permissions.topaz"
+}
+seaside_base() {
+  seaside_topaz DataCurator "${gtScriptsDir}/seaside/installSeaside.topaz"
+}
+seaside_package() (
+  # Only publish a fully prepared package. Never rewrite cloned/live sources.
+  [ ! -d "$GEMSTONE_WORKSPACE" ] || exit 0
+  stage=$(mktemp -d "${stoneDir}/.bvc-gt-package.XXXXXX")
+  trap 'rm -rf -- "$stage"' EXIT
+  export GEMSTONE_WORKSPACE=$stage
+  cd "$stage"
+  touch bootstrap.image
+  ROWAN_PROJECTS_HOME="$gitDir_devtools" bash "${gtScriptsDir}/release/package-release.sh"
+  bash "${stage}/${RELEASED_PACKAGE_GEMSTONE_NAME}/seaside/patch-dictionaries.sh"
+  mv "$stage" "${stoneDir}/.bvc-gt-package"
+)
+seaside_dictionary() {
+  seaside_topaz DataCurator "${gtScriptsDir}/seaside/gt-symbol-dictionary.topaz"
+}
+seaside_gt() {
+  bash "${GEMSTONE_WORKSPACE}/${RELEASED_PACKAGE_GEMSTONE_NAME}/seaside/inputRelease.sh" -s "$STONE"
+}
+seaside_patches() {
+  seaside_topaz DataCurator "${GEMSTONE_WORKSPACE}/${RELEASED_PACKAGE_GEMSTONE_NAME}/seaside/seaside-gt-patches.topaz"
+}

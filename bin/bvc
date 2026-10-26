@@ -18,7 +18,7 @@ Commands:
   init [directory] [--template=NAME]
       Initialise the current directory, or create and initialise directory.
 
-  build
+  build [--with-seaside]
       Build the DevKit/app and install Rowan GemStone if needed, then run both.
 
   run
@@ -27,8 +27,9 @@ Commands:
   list
       List registered deployments and currently running stones.
 
-  start <deploymentName>
+  start <deploymentName> [--with-seaside]
       Start a deployment, building a Rowan stone first if needed.
+      --with-seaside selects a Seaside/GT DevKit stone with portable Foundation.
 
   stop <deploymentName>
       Stop a deployment.

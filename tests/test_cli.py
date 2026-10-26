@@ -25,6 +25,9 @@ if os.environ.get('FAIL_COMMAND') == name:
 if name == 'installProject.stone' and os.environ.get('FAIL_PROJECT'):
     if args[0].endswith('/' + os.environ['FAIL_PROJECT'] + '.ston'):
         sys.exit(43)
+if name in ('testInstallSeasideTools', 'testInstallSeasideProjects'):
+    assert pathlib.Path(os.environ['GEMSTONE']).name == 'product'
+    assert os.environ['STONE']
 def option(key):
     return next((a.split('=', 1)[1] for a in args if a.startswith(key + '=')), None)
 if name == 'registryReport.solo':
@@ -108,6 +111,9 @@ class CliTests(unittest.TestCase):
         self.root = Path(self.tmp.name).resolve()
         self.project = self.root / 'My Game'
         self.project.mkdir()
+        self.foundation_sources = self.project / 'git_root/projects/CatalystFoundation/src'
+        self.foundation_sources.mkdir(parents=True)
+        (self.foundation_sources / 'fixture.st').write_text('source fixture one')
         self.tools = self.root / 'tools'
         self.tools.mkdir()
         (self.root / 'registered').mkdir()
@@ -121,7 +127,8 @@ class CliTests(unittest.TestCase):
                     'startStone.solo', 'stopStone.solo', 'startNetldi.solo', 'stopNetldi.solo',
                     'gslist.solo', 'deleteStone.solo',
                     'enableUnicodeCompares.topaz', 'testInstallDevtools', 'testInstallProjects',
-                    'installProject.stone',
+                    'installProject.stone', 'testInstallSeasideTools',
+                    'testInstallSeasideProjects',
                     'curl', 'unzip']
         for name in commands:
             self.write_exe(self.tools / name, MOCK)
@@ -135,6 +142,14 @@ class CliTests(unittest.TestCase):
             'install_devtools_projects() { testInstallDevtools "$@"; }\n')
         (installers / 'projects.install').write_text(
             'install_projects() { testInstallProjects "$@"; }\n')
+        (installers / 'seaside_dev_tools.install').write_text('\n'.join(
+            '%s() { testInstallSeasideTools %s; }' % (function, step)
+            for function, step in (
+                ('seaside_permissions', 'permissions'), ('seaside_base', 'base'),
+                ('seaside_package', 'package'), ('seaside_dictionary', 'dictionary'),
+                ('seaside_gt', 'gt'), ('seaside_patches', 'patches'))) + '\n')
+        (installers / 'seaside_projects.install').write_text(
+            'install_seaside_projects() { testInstallSeasideProjects "$BVC_FOUNDATION_REPOSITORY" "$BVC_FOUNDATION_SOURCE_VERSION"; }\n')
 
     def tearDown(self):
         launches = self.root / 'launches'
@@ -204,7 +219,7 @@ class CliTests(unittest.TestCase):
 
     def test_removed_commands_and_invalid_arguments_fail(self):
         for args in [('create',), ('devkit',), ('run', 'anything'), ('build', 'anything'),
-                     ('build', '--with-seaside'), ('start', 'web', '--with-seaside'),
+                     ('build', '--with-seaside', 'anything'), ('start', 'web', '--bad-option'),
                      ('stop',), ('start', '../bad'), ('delete', '../bad', '--force')]:
             self.cli(*args, ok=False)
         self.assertEqual(self.events(), [])
@@ -256,6 +271,72 @@ class CliTests(unittest.TestCase):
         self.assertEqual(len(self.events('startStone.solo')), 1)
         self.assertFalse((self.root / 'launches').exists())
         self.assertFalse((self.project / 'devkit').exists())
+
+    def test_seaside_start_loads_portable_projects_and_reuses_stone(self):
+        self.cli('start', 'foundation-dev', '--with-seaside')
+        self.cli('start', 'foundation-dev', '--with-seaside')
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+        self.assertIn('--template=default_seaside', self.events('createStone.solo')[0][1])
+        self.assertEqual([args[0] for _, args in self.events('testInstallSeasideTools')],
+                         ['permissions', 'base', 'package', 'dictionary', 'gt', 'patches'])
+        self.assertEqual(len(self.events('testInstallSeasideProjects')), 1)
+        self.assertTrue(self.events('testInstallSeasideProjects')[0][1][0].endswith(
+            '/git_root/projects/CatalystFoundation/src'))
+        self.assertEqual(self.events('testInstallProjects'), [])
+        self.assertFalse((self.project / 'devkit').exists())
+        self.assertFalse((self.project / 'stones/.foundation-dev.bvc-installing').exists())
+
+    def test_seaside_build_runs_app_and_seaside_stone(self):
+        self.cli('build', '--with-seaside', GEMSTONE_STONE_NAME='foundation-dev')
+        self.assertIn('--template=default_seaside', self.events('createStone.solo')[0][1])
+        self.assertEqual(len(self.events('testInstallSeasideProjects')), 1)
+        self.assertTrue((self.root / 'launches').exists())
+
+    def test_seaside_failed_load_resumes_without_reloading_tools(self):
+        self.cli('start', 'foundation-dev', '--with-seaside',
+                 FAIL_COMMAND='testInstallSeasideProjects', ok=False)
+        marker = self.project / 'stones/.foundation-dev.bvc-installing'
+        self.assertEqual(marker.read_text().strip(), 'seaside:devtools')
+        first_version = self.events('testInstallSeasideProjects')[0][1][1]
+        (self.foundation_sources / 'fixture.st').write_text('corrected source fixture')
+        data = self.project / 'stones/foundation-dev/user-data'
+        data.write_text('preserve')
+        self.cli('start', 'foundation-dev', '--with-seaside')
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+        self.assertEqual(len(self.events('testInstallSeasideTools')), 6)
+        self.assertEqual(len(self.events('testInstallSeasideProjects')), 2)
+        self.assertNotEqual(self.events('testInstallSeasideProjects')[1][1][1], first_version)
+        self.assertEqual(data.read_text(), 'preserve')
+        self.assertFalse(marker.exists())
+
+    def test_seaside_flag_cannot_resume_rowan_installation(self):
+        self.cli('start', 'foundation-dev', FAIL_COMMAND='testInstallProjects', ok=False)
+        marker = self.project / 'stones/.foundation-dev.bvc-installing'
+        before = marker.read_text()
+        self.cli('start', 'foundation-dev', '--with-seaside', ok=False)
+        self.assertEqual(marker.read_text(), before)
+        self.assertEqual(self.events('testInstallSeasideTools'), [])
+
+    def test_failed_seaside_tools_resume_at_failed_step(self):
+        self.cli('start', 'foundation-dev', '--with-seaside',
+                 FAIL_COMMAND='testInstallSeasideTools', ok=False)
+        marker = self.project / 'stones/.foundation-dev.bvc-installing'
+        self.assertEqual(marker.read_text().strip(), 'seaside:configured')
+        self.cli('start', 'foundation-dev', '--with-seaside')
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+        self.assertEqual(len(self.events('testInstallSeasideProjects')), 1)
+
+    def test_seaside_resume_checks_actual_stone_template(self):
+        self.cli('start', 'foundation-dev', FAIL_COMMAND='testInstallProjects', ok=False)
+        (self.project / 'stones/.foundation-dev.bvc-installing').write_text('seaside:devtools\n')
+        self.cli('start', 'foundation-dev', '--with-seaside', ok=False)
+        self.assertEqual(self.events('testInstallSeasideProjects'), [])
+
+    def test_seaside_flag_leaves_completed_rowan_stone_unchanged(self):
+        self.cli('start', 'production')
+        self.cli('start', 'production', '--with-seaside')
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+        self.assertEqual(self.events('testInstallSeasideTools'), [])
 
     def test_failed_project_set_does_not_build_or_report_success(self):
         self.cli('run', FAIL_COMMAND='createProjectSet.solo', ok=False)
