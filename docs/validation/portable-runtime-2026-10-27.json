@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-27",
+  "status": "blocked-on-runtime-source-fix",
+  "stone": "bvc_foundation_portable",
+  "gemstone": "3.7.5",
+  "platform": "arm64.Darwin",
+  "runtimeSourceCommit": "539e9e4753cfdb0e168226e414704ba6f7510756",
+  "requestedGroup": "runtime",
+  "productionPackages": [
+    "BVC-Runtime-Announcements",
+    "BVC-Runtime-Worker-Core",
+    "BVC-Runtime-Worker-GemStone",
+    "BVC-Runtime-Services",
+    "BVC-Runtime-Kernel-Core",
+    "BVC-Runtime-Kernel-GemStone",
+    "BVC-Runtime-Configuration"
+  ],
+  "testsExamplesUIAndPharoSelected": false,
+  "loader": "One Gofer/Monticello atomic batch using provisioned prerequisites; no upstream reload",
+  "blockingCompilerError": {
+    "class": "CRRuntime",
+    "methods": [
+      "orchestrationAuthorityForWorkerIdentifier:",
+      "reserveOrchestrationForWorkerIdentifier:"
+    ],
+    "argument": "identifier",
+    "code": 1030,
+    "message": "variable has already been declared",
+    "reason": "GemStone rejects an argument shadowing the inherited identifier slot"
+  },
+  "foundationAfterFinalFailedLoad": {
+    "foundationProbePreserved": true,
+    "foundationDescriptionValidation": true,
+    "runtimeLoadComplete": false,
+    "foundationNewIdentity": true,
+    "foundationConfigurationRoundTrip": true
+  },
+  "normalDataCuratorLogin": "passed after repair; initialization bypass disabled",
+  "initialAttemptRecovery": {
+    "cause": "Full baseline load reloaded upstream GLASS/Announcements and mixed legacy/Gt Announcer layouts during login",
+    "backup": "recovery/bvc-runtime-20261027/before-login-repair.dbf",
+    "recovery": "Restored preserved Announcements export and legacy UserGlobals Announcer initializer; normal login and Foundation checks passed"
+  },
+  "cliTests": {
+    "run": 43,
+    "failures": 0
+  },
+  "runtimeSourceChanged": false,
+  "gtUse": "Stopped at user request while another chat performs timing; Runtime source fixes deferred",
+  "limits": [
+    "Runtime did not finish loading; no worker execution or queue persistence qualification is claimed."
+  ]
+}

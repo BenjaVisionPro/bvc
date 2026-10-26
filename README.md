@@ -162,6 +162,34 @@ preserves its type and data. Resume an incomplete Seaside installation with
 `--with-seaside`; bvc refuses to resume it through the Rowan installer, or vice
 versa. Existing stones are never converted automatically.
 
+To add portable Runtime to an existing Seaside DevKit stone, use the incremental
+helper from the same project directory:
+
+```sh
+bvcLoadRuntime.sh foundation-dev
+```
+
+It loads the production manifest corresponding to the `runtime` group from the
+local CatalystRuntime checkout: five common packages and the two GemStone backend
+packages. One atomic Monticello batch reuses the stone's provisioned dependencies,
+avoiding an upstream GLASS/Announcements reload. Runtime tests, examples, UI and
+Pharo implementations are excluded. `BVC_RUNTIME_REPOSITORY` can select another
+verified local `tonel://` checkout. The helper preserves the stone and checks
+that the Foundation probe survives, the GemStone platform is selected, native
+queue delivery and configuration snapshots survive reconnecting, and only the
+seven production packages are loaded. Its result is written to
+`stones/<deployment>/portable-runtime-validation.ston`. These checks qualify
+loading, queue persistence and configuration behavior; they do not establish
+Runtime topology launching or worker lifecycle support.
+
+The initial GemStone 3.7.5 attempt is currently blocked by two Runtime method
+arguments named `identifier`, which shadow an inherited instance variable.
+The helper reports the compile failure; it is not yet a qualified Runtime load.
+The source fix must be made through the live GT image when it is available.
+The [attempt and recovery record](docs/validation/portable-runtime-2026-10-27.json)
+captures the compiler errors, the safer incremental load boundary and the
+Foundation preservation checks. No Runtime execution qualification is claimed.
+
 Deletion requires typing the deployment name. For an intentional unattended
 deletion, use `bvc delete <deployment> --force`.
 

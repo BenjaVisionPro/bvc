@@ -1,0 +1,97 @@
+iferr 1 stk
+iferr 2 stack
+iferr 3 exit
+
+## This incremental recipe uses the Tonel adapter installed by the Foundation load.
+expectvalue true
+run
+#(TonelRepository TonelMCReader CFConfiguration GRError GemServer Announcer) do: [:name |
+  (Smalltalk includesKey: name) ifFalse: [self error: 'Missing DevKit prerequisite: ', name asString]].
+UserGlobals at: #BVCRuntimeFoundationBefore put: (STON toString: (UserGlobals at: #BVCFoundationPortableProbe)).
+true
+%
+commit
+
+expectvalue true
+run
+GsDeployer deploy: [
+  | sourceUrl repository gofer |
+  sourceUrl := System gemEnvironmentVariable: 'BVC_RUNTIME_REPOSITORY'.
+  repository := TonelRepository new directory: (MetacelloPlatform current fileHandleOn:
+    (sourceUrl copyFrom: 'tonel://' size + 1 to: sourceUrl size)).
+  gofer := Gofer new repository: repository.
+  "The runtime group's production manifest is loaded in one Monticello batch.
+  Reuse provisioned prerequisites rather than reloading GLASS/Announcements."
+  #('BVC-Runtime-Announcements' 'BVC-Runtime-Worker-Core'
+    'BVC-Runtime-Worker-GemStone' 'BVC-Runtime-Services'
+    'BVC-Runtime-Kernel-Core' 'BVC-Runtime-Kernel-GemStone' 'BVC-Runtime-Configuration')
+    do: [:name | gofer package: name].
+  gofer load ].
+true
+%
+commit
+
+expectvalue true
+run
+| before after platform queue envelope config snapshot loaded expected |
+before := UserGlobals at: #BVCRuntimeFoundationBefore.
+after := STON toString: (UserGlobals at: #BVCFoundationPortableProbe).
+before = after ifFalse: [self error: 'Foundation probe changed during Runtime loading'].
+platform := CRPlatform current.
+platform class = CRGemStonePlatform ifFalse: [self error: 'Runtime did not select its GemStone platform'].
+queue := CRGemStoneWorkQueue new.
+queue depth = 0 ifFalse: [self error: 'New native queue is not empty'].
+config := CRHostConfiguration new.
+config identifier: #portableRuntimeHost.
+snapshot := CRConfigurationSnapshot copy: config.
+snapshot == config ifTrue: [self error: 'Runtime configuration snapshot aliases its input'].
+snapshot identifier = #portableRuntimeHost ifFalse: [self error: 'Runtime snapshot lost its identity'].
+envelope := CRWorkUnitEnvelope onWorkUnit: CRWorkUnit new.
+queue enqueue: envelope.
+queue depth = 1 ifFalse: [self error: 'Native queue did not retain the envelope'].
+loaded := MCWorkingCopy allManagers
+  select: [:manager | manager package name beginsWith: 'BVC-Runtime-']
+  thenCollect: [:manager | manager package name].
+expected := #('BVC-Runtime-Announcements' 'BVC-Runtime-Worker-Core'
+  'BVC-Runtime-Worker-GemStone' 'BVC-Runtime-Services'
+  'BVC-Runtime-Kernel-Core' 'BVC-Runtime-Kernel-GemStone' 'BVC-Runtime-Configuration').
+loaded asSet = expected asSet ifFalse: [self error: 'Runtime package selection includes unexpected packages'].
+UserGlobals at: #BVCRuntimePortableProbe put: snapshot.
+UserGlobals at: #BVCRuntimePortableQueue put: queue.
+UserGlobals at: #BVCRuntimePortablePackages put: loaded asSortedCollection asArray.
+true
+%
+commit
+logout
+login
+
+expectvalue true
+run
+| queue delivery report file |
+(UserGlobals at: #BVCRuntimePortableProbe) identifier = #portableRuntimeHost
+  ifFalse: [self error: 'Runtime configuration did not survive reconnect'].
+(STON toString: (UserGlobals at: #BVCFoundationPortableProbe)) = (UserGlobals at: #BVCRuntimeFoundationBefore)
+  ifFalse: [self error: 'Foundation probe did not survive Runtime reconnect'].
+queue := UserGlobals at: #BVCRuntimePortableQueue.
+queue depth = 1 ifFalse: [self error: 'Native queued envelope did not survive reconnect'].
+delivery := queue nextForExecutionOrNil.
+delivery workUnit class = CRWorkUnit ifFalse: [self error: 'Native queue changed the delivered WorkUnit'].
+queue acknowledge: delivery.
+queue isEmpty ifFalse: [self error: 'Native queue did not acknowledge delivery'].
+report := Dictionary new
+  at: 'stone' put: (System gemEnvironmentVariable: 'STONE');
+  at: 'group' put: 'runtime';
+  at: 'packages' put: (UserGlobals at: #BVCRuntimePortablePackages);
+  at: 'foundationPreserved' put: true;
+  at: 'gemstonePlatform' put: true;
+  at: 'nativeQueueDeliveryAndPersistence' put: true;
+  at: 'configurationSnapshotAndPersistence' put: true;
+  at: 'uiAndExamplesExcluded' put: true;
+  yourself.
+file := GsFile openWriteOnServer: (System gemEnvironmentVariable: 'BVC_RUNTIME_REPORT').
+[file nextPutAll: (STON toString: report)] ensure: [file close].
+true
+%
+commit
+errorCount
+exit

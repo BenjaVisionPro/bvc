@@ -127,7 +127,7 @@ class CliTests(unittest.TestCase):
                     'startStone.solo', 'stopStone.solo', 'startNetldi.solo', 'stopNetldi.solo',
                     'gslist.solo', 'deleteStone.solo',
                     'enableUnicodeCompares.topaz', 'testInstallDevtools', 'testInstallProjects',
-                    'installProject.stone', 'testInstallSeasideTools',
+                    'installProject.stone', 'topaz', 'testInstallSeasideTools',
                     'testInstallSeasideProjects',
                     'curl', 'unzip']
         for name in commands:
@@ -150,6 +150,14 @@ class CliTests(unittest.TestCase):
                 ('seaside_gt', 'gt'), ('seaside_patches', 'patches'))) + '\n')
         (installers / 'seaside_projects.install').write_text(
             'install_seaside_projects() { testInstallSeasideProjects "$BVC_FOUNDATION_REPOSITORY" "$BVC_FOUNDATION_SOURCE_VERSION"; }\n')
+        self.runtime_sources = self.project / 'git_root/projects/CatalystRuntime/src'
+        self.runtime_sources.mkdir(parents=True)
+        (self.runtime_sources / 'fixture.st').write_text('Runtime source fixture')
+        login = self.project / 'git_root/dev_tools/gt4gemstone/scripts/loginDataCurator.topaz'
+        login.parent.mkdir(parents=True)
+        login.write_text('## Stubbed login, interpreted by the command mock.\n')
+        (self.project / 'config/gemstone/load-portable-runtime.topaz').write_text(
+            '## Stubbed Runtime recipe, interpreted by the command mock.\n')
 
     def tearDown(self):
         launches = self.root / 'launches'
@@ -179,6 +187,55 @@ class CliTests(unittest.TestCase):
         file = self.root / 'events'
         events = [json.loads(x) for x in file.read_text().splitlines()] if file.exists() else []
         return [e for e in events if name is None or e[0] == name]
+
+    def load_runtime(self, deployment, ok=True, **overrides):
+        p = subprocess.run([str(REPO / 'bin/bvcLoadRuntime.sh'), deployment],
+                           cwd=self.project, env=dict(self.env, **overrides),
+                           text=True, capture_output=True, timeout=30)
+        if ok:
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        else:
+            self.assertNotEqual(p.returncode, 0, p.stdout + p.stderr)
+        return p
+
+    def test_runtime_load_reuses_existing_seaside_stone(self):
+        self.cli('start', 'runtime-dev', '--with-seaside')
+        data = self.project / 'stones/runtime-dev/user-data'
+        data.write_text('preserve')
+        self.load_runtime('runtime-dev')
+        self.load_runtime('runtime-dev')
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+        self.assertEqual(len(self.events('testInstallSeasideProjects')), 1)
+        self.assertEqual(len(self.events('topaz')), 2)
+        self.assertIn(str(self.project / 'config/gemstone/load-portable-runtime.topaz'),
+                      self.events('topaz')[0][1])
+        self.assertEqual(data.read_text(), 'preserve')
+
+    def test_runtime_load_rejects_missing_or_rowan_stone(self):
+        self.load_runtime('missing', ok=False)
+        self.assertEqual(self.events('createStone.solo'), [])
+        self.cli('start', 'production')
+        self.load_runtime('production', ok=False)
+        self.assertEqual(self.events('topaz'), [])
+
+    def test_runtime_load_rejects_missing_sources_and_login(self):
+        self.cli('start', 'runtime-dev', '--with-seaside')
+        missing = self.project / 'missing'
+        self.load_runtime('runtime-dev', ok=False,
+                          BVC_RUNTIME_REPOSITORY='tonel://' + str(missing))
+        (self.project / 'git_root/dev_tools/gt4gemstone/scripts/loginDataCurator.topaz').unlink()
+        self.load_runtime('runtime-dev', ok=False)
+        self.assertEqual(self.events('topaz'), [])
+
+    def test_runtime_load_failure_preserves_deployment_and_can_retry(self):
+        self.cli('start', 'runtime-dev', '--with-seaside')
+        data = self.project / 'stones/runtime-dev/user-data'
+        data.write_text('preserve')
+        self.load_runtime('runtime-dev', ok=False, FAIL_COMMAND='topaz')
+        self.assertFalse((self.project / 'stones/.runtime-dev.bvc-installing').exists())
+        self.assertEqual(data.read_text(), 'preserve')
+        self.load_runtime('runtime-dev')
+        self.assertEqual(len(self.events('createStone.solo')), 1)
 
     def test_init_creates_named_directory_and_copies_gitignore(self):
         self.cli('init', 'New Game', cwd=self.root)
