@@ -19,7 +19,7 @@ Commands:
       Initialise the current directory, or create and initialise directory.
 
   build [--with-seaside]
-      Build the DevKit/app and install Rowan GemStone if needed, then run both.
+      Build the DevKit/app and configured GemStone deployment, then run both.
 
   run
       Build the DevKit/app if needed, then launch it. Does not start GemStone.
