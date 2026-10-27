@@ -182,13 +182,13 @@ seven production packages are loaded. Its result is written to
 loading, queue persistence and configuration behavior; they do not establish
 Runtime topology launching or worker lifecycle support.
 
-The initial GemStone 3.7.5 attempt is currently blocked by two Runtime method
-arguments named `identifier`, which shadow an inherited instance variable.
-The helper reports the compile failure; it is not yet a qualified Runtime load.
-The source fix must be made through the live GT image when it is available.
-The [attempt and recovery record](docs/validation/portable-runtime-2026-10-27.json)
-captures the compiler errors, the safer incremental load boundary and the
-Foundation preservation checks. No Runtime execution qualification is claimed.
+The [GemStone 3.7.5 validation](docs/validation/portable-runtime-2026-10-27.json)
+records successful loading and repeat loading in the existing Foundation stone.
+Runtime argument names and configuration snapshot copying were corrected through
+the live GT image. The helper requests each package's exact source fingerprint
+so Gofer cannot choose an older cached checksum version. The record also retains
+the initial failure and recovery details. GemStone lifecycle synchronization,
+orchestration supervision and worker launching remain unimplemented.
 
 Deletion requires typing the deployment name. For an intentional unattended
 deletion, use `bvc delete <deployment> --force`.

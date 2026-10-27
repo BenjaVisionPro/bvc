@@ -1,10 +1,10 @@
 {
   "date": "2026-10-27",
-  "status": "blocked-on-runtime-source-fix",
+  "status": "passed-portable-load-and-persistence",
   "stone": "bvc_foundation_portable",
   "gemstone": "3.7.5",
   "platform": "arm64.Darwin",
-  "runtimeSourceCommit": "539e9e4753cfdb0e168226e414704ba6f7510756",
+  "runtimeSourceCommit": "de665592a9b03465324091e5701b453b4a30c86e",
   "requestedGroup": "runtime",
   "productionPackages": [
     "BVC-Runtime-Announcements",
@@ -17,17 +17,6 @@
   ],
   "testsExamplesUIAndPharoSelected": false,
   "loader": "One Gofer/Monticello atomic batch using provisioned prerequisites; no upstream reload",
-  "blockingCompilerError": {
-    "class": "CRRuntime",
-    "methods": [
-      "orchestrationAuthorityForWorkerIdentifier:",
-      "reserveOrchestrationForWorkerIdentifier:"
-    ],
-    "argument": "identifier",
-    "code": 1030,
-    "message": "variable has already been declared",
-    "reason": "GemStone rejects an argument shadowing the inherited identifier slot"
-  },
   "foundationAfterFinalFailedLoad": {
     "foundationProbePreserved": true,
     "foundationDescriptionValidation": true,
@@ -43,11 +32,57 @@
   },
   "cliTests": {
     "run": 43,
-    "failures": 0
+    "failures": 0,
+    "seconds": 91.62,
+    "scope": "Stubbed CLI contracts; process inspection enabled for launch and cleanup checks"
   },
-  "runtimeSourceChanged": false,
-  "gtUse": "Stopped at user request while another chat performs timing; Runtime source fixes deferred",
+  "runtimeSourceChanged": true,
+  "gtUse": "Renames and snapshot fix compiled and exported through GT MCP; independent checkout matches all 19 loaded package snapshots, four source-only GemStone packages unchanged",
   "limits": [
-    "Runtime did not finish loading; no worker execution or queue persistence qualification is claimed."
-  ]
+    "Loading, native queue persistence and configuration snapshots are qualified. GemStone Runtime lifecycle synchronization, orchestration supervision and worker launching remain unimplemented."
+  ],
+  "previousCompilerBlocker": {
+    "class": "CRRuntime",
+    "methods": [
+      "orchestrationAuthorityForWorkerIdentifier:",
+      "reserveOrchestrationForWorkerIdentifier:"
+    ],
+    "argument": "identifier",
+    "code": 1030,
+    "message": "variable has already been declared",
+    "reason": "GemStone rejects an argument shadowing the inherited identifier slot",
+    "resolved": "Both arguments renamed to aWorkerIdentifier through GT MCP"
+  },
+  "snapshotPortabilityFix": "CRConfigurationSnapshot uses isVariable and size for indexed storage; GemStone basicSize includes named slots",
+  "sourceVersionSelection": "Exact fingerprint version requested for every package, avoiding older higher-numbered cached checksums",
+  "nativeValidation": {
+    "load": "passed",
+    "repeatLoad": "passed",
+    "normalDataCuratorLogin": "passed",
+    "foundationProbePreserved": true,
+    "gemstonePlatformSelected": true,
+    "nativeQueueDeliveryAndReconnect": true,
+    "configurationSnapshotAndReconnect": true,
+    "productionPackageCount": 7,
+    "testsExamplesUIAndPharoSelected": false
+  },
+  "gtRegression": {
+    "ownership": {
+      "status": "passed",
+      "checks": [
+        "nilRejected",
+        "ownershipReserved",
+        "matchingLookup",
+        "wrongWorkerRejected",
+        "duplicateReservationRejected",
+        "runtimeIdentityPreserved"
+      ]
+    },
+    "configuration": {
+      "status": "passed",
+      "configurationExamples": 15,
+      "snapshotIdentityAndCycle": true
+    },
+    "isolation": "CCNativeMcpLease with one independent Runtime owner through cleanup; completion markers observed outside GT"
+  }
 }
