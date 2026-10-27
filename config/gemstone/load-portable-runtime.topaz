@@ -29,6 +29,9 @@ GsDeployer deploy: [
     do: [:name | gofer version: name, '-bvc.', (System gemEnvironmentVariable: 'BVC_FOUNDATION_SOURCE_VERSION')].
   gofer load.
   gofer := Gofer new repository: repository.
+  gofer version: 'BVC-Runtime-Configuration-Magritte-bvc.', (System gemEnvironmentVariable: 'BVC_FOUNDATION_SOURCE_VERSION').
+  gofer load.
+  gofer := Gofer new repository: repository.
   #('BVC-Runtime-Worker-GemStone' 'BVC-Runtime-Kernel-GemStone')
     do: [:name | gofer version: name, '-bvc.', (System gemEnvironmentVariable: 'BVC_FOUNDATION_SOURCE_VERSION')].
   gofer load ].
@@ -60,7 +63,8 @@ loaded := MCWorkingCopy allManagers
   thenCollect: [:manager | manager package name].
 expected := #('BVC-Runtime-Announcements' 'BVC-Runtime-Worker-Core'
   'BVC-Runtime-Worker-GemStone' 'BVC-Runtime-Services'
-  'BVC-Runtime-Kernel-Core' 'BVC-Runtime-Kernel-GemStone' 'BVC-Runtime-Configuration').
+  'BVC-Runtime-Kernel-Core' 'BVC-Runtime-Kernel-GemStone' 'BVC-Runtime-Configuration'
+  'BVC-Runtime-Configuration-Magritte').
 loaded asSet = expected asSet ifFalse: [self error: 'Runtime package selection includes unexpected packages'].
 UserGlobals at: #BVCRuntimePortableProbe put: snapshot.
 UserGlobals at: #BVCRuntimePortableQueue put: queue.

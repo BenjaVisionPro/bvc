@@ -1,0 +1,36 @@
+run
+System abortTransaction. System transactionMode: #manualBegin. true
+%
+run
+| action name path configuration runtime registry result file |
+action := System gemEnvironmentVariable: 'BVC_RUNTIME_ACTION'.
+name := System gemEnvironmentVariable: 'BVC_RUNTIME_NAME'.
+path := System gemEnvironmentVariable: 'BVC_RUNTIME_CONFIGURATION'.
+configuration := nil.
+(path notNil and: [path isEmpty not]) ifTrue: [
+ file := GsFile openReadOnServer: path.
+ [configuration := CRRuntimeConfigurationCodec fromString: file contents] ensure: [file close]].
+registry := CRRuntimeRegistry default.
+runtime := registry runtimeNamed: name.
+(action = 'start' or: [action = 'configure']) ifTrue: [
+ runtime ifNil: [
+ configuration ifNil: [self error: 'A new Runtime requires a configuration file'].
+ "Validate and register together: rejection leaves no empty registry entry."
+ runtime := CRGemStoneRuntime duringTransaction: [
+ | created |
+ created := registry runtimeNamed: name ifAbsent: [CRGemStoneRuntime new].
+ created configure: configuration.
+ registry register: created named: name].
+ configuration := nil].
+ configuration ifNotNil: [runtime configure: configuration]].
+runtime ifNil: [self error: 'No Runtime is registered with this name'].
+action = 'start' ifTrue: [runtime start].
+action = 'stop' ifTrue: [runtime stop].
+action = 'restart' ifTrue: [runtime restart].
+action = 'remove'
+ ifTrue: [runtime remove. result := Dictionary new at: 'name' put: name; at: 'state' put: 'removed'; yourself]
+ ifFalse: [result := runtime observation].
+file := GsFile openWriteOnServer: (System gemEnvironmentVariable: 'BVC_RUNTIME_RESULT').
+[file nextPutAll: (STON toJsonString: result)] ensure: [file close].
+true
+%

@@ -1,0 +1,248 @@
+{
+  "date": "2026-10-27",
+  "stone": "bvc_foundation_portable",
+  "gemstoneVersion": "3.7.5",
+  "scope": "Named Runtime lifecycle and cross-Gem topology; socket transports excluded",
+  "nativeLifecycle": {
+    "stone": "bvc_foundation_portable",
+    "runtime": "bvc_lifecycle_ac1b6a023b81",
+    "checks": {
+      "unknownRuntimeRequiresConfiguration": true,
+      "configurePersistsWithoutStarting": true,
+      "crossGemServicePublicationAndVersionAdoption": true,
+      "repeatedStartReusesGems": true,
+      "runningRuntimeCannotBeRemoved": true,
+      "rejectedConfigurationPreservesVersionAndRegistry": true,
+      "runningConfigurationAdoptedWithoutReplacingGems": true,
+      "gracefulStopAndRepeatedStop": true,
+      "restartRetainsRuntimeIdentityAndAcceptedVersion": true,
+      "staleAuthorityPublicationAndSubmissionRejected": true,
+      "obsoleteAuthorityAndVersionRejectedAtConsumption": true,
+      "publishedTopologyContainsNoOperationalHandles": true,
+      "restartWhileRunning": true,
+      "removeUnregistersStoppedRuntime": true,
+      "concurrentNamedCreationIsUnique": true
+    },
+    "firstActivation": {
+      "runtimeIdentifier": "5j3fxtau4zg6pshbyuktvvsww",
+      "configurationVersion": 1,
+      "desiredState": "running",
+      "name": "bvc_lifecycle_ac1b6a023b81",
+      "topologyRevision": 13,
+      "state": "running",
+      "workers": [
+        {
+          "workerIdentifier": "5j3fxtau4zg6pshbyuktvvsww_worker_2",
+          "process": {
+            "pid": 73600,
+            "live": true,
+            "nativeState": "running",
+            "state": "running",
+            "token": "fecf1d7d-8309-4b27-af26-c0794fb5307f"
+          },
+          "hostIdentifier": "workerHost",
+          "publishedState": "running",
+          "services": [
+            {
+              "appliedConfigurationVersion": 1,
+              "state": "running",
+              "identifier": "probe"
+            }
+          ]
+        },
+        {
+          "workerIdentifier": "5j3fxtau4zg6pshbyuktvvsww_worker_1",
+          "process": {
+            "pid": 73552,
+            "live": true,
+            "nativeState": "running",
+            "state": "running",
+            "token": "b698896c-7b83-4efa-b1e5-a6591f874453"
+          },
+          "hostIdentifier": "local",
+          "publishedState": "running",
+          "services": [
+            {
+              "appliedConfigurationVersion": 1,
+              "state": "running",
+              "identifier": "runtimeOrchestrator"
+            }
+          ]
+        }
+      ]
+    },
+    "finalState": "removed"
+  },
+  "nativeWorkerRegressions": {
+    "local": {
+      "sunit": 8,
+      "failures": 0,
+      "errors": 0,
+      "directExamples": 8,
+      "transactionFixture": "passed",
+      "workerHost": "bvc_runtime_lifecycle"
+    },
+    "persistent": {
+      "sunit": 8,
+      "failures": 0,
+      "errors": 0,
+      "directExamples": 8,
+      "transactionFixture": "passed",
+      "workerHost": "bvc_runtime_persistent"
+    }
+  },
+  "sharedGT": {
+    "managementSUnit": {
+      "run": 4,
+      "failures": 0,
+      "errors": 0
+    },
+    "configurationCodecExamples": {
+      "run": 15,
+      "failures": 0,
+      "errors": 0
+    }
+  },
+  "cliRegression": {
+    "run": 54,
+    "failures": 0,
+    "errors": 0,
+    "processInspection": "enabled"
+  },
+  "loaderRegression": {
+    "run": 3,
+    "failures": 0,
+    "errors": 0
+  },
+  "productionReload": {
+    "uiAndExamplesExcluded": true,
+    "packages": [
+      "BVC-Runtime-Announcements",
+      "BVC-Runtime-Configuration",
+      "BVC-Runtime-Configuration-Magritte",
+      "BVC-Runtime-Kernel-Core",
+      "BVC-Runtime-Kernel-GemStone",
+      "BVC-Runtime-Services",
+      "BVC-Runtime-Worker-Core",
+      "BVC-Runtime-Worker-GemStone"
+    ],
+    "stone": "bvc_foundation_portable",
+    "foundationPreserved": true,
+    "gemstonePlatform": true,
+    "group": "runtime",
+    "nativeQueueDeliveryAndPersistence": true,
+    "configurationSnapshotAndPersistence": true
+  },
+  "gtSourceVerification": {
+    "BVC-Runtime-Tests-Configuration": {
+      "definitions": 72,
+      "differences": 0
+    },
+    "BVC-Runtime-Kernel-Pharo": {
+      "definitions": 17,
+      "differences": 0
+    },
+    "BVC-Runtime-Services": {
+      "definitions": 775,
+      "differences": 0
+    },
+    "BVC-Runtime-Tests-Worker-Core": {
+      "definitions": 337,
+      "differences": 0
+    },
+    "BVC-Runtime-Examples": {
+      "definitions": 17,
+      "differences": 0
+    },
+    "BVC-Runtime-Tests-Magritte": {
+      "definitions": 8,
+      "differences": 0
+    },
+    "BVC-Runtime-UI": {
+      "definitions": 991,
+      "differences": 0
+    },
+    "BVC-Runtime-Worker-Core": {
+      "definitions": 435,
+      "differences": 0
+    },
+    "BVC-Runtime-Tests-Announcements": {
+      "definitions": 7,
+      "differences": 0
+    },
+    "BVC-Runtime-Tests-Worker-Pharo": {
+      "definitions": 46,
+      "differences": 0
+    },
+    "BVC-Runtime-Announcements": {
+      "definitions": 177,
+      "differences": 0
+    },
+    "BVC-Runtime-Configuration-Magritte": {
+      "definitions": 80,
+      "differences": 0
+    },
+    "BVC-Runtime-Configuration": {
+      "definitions": 486,
+      "differences": 0
+    },
+    "BVC-Runtime-Tests-Kernel-Core": {
+      "definitions": 139,
+      "differences": 0
+    },
+    "BVC-Runtime-Magritte": {
+      "definitions": 6,
+      "differences": 0
+    },
+    "BaselineOfCatalystRuntime": {
+      "definitions": 17,
+      "differences": 0
+    },
+    "BVC-Runtime-Kernel-Core": {
+      "definitions": 401,
+      "differences": 0
+    },
+    "BVC-Runtime-Worker-Pharo": {
+      "definitions": 37,
+      "differences": 0
+    },
+    "BVC-Runtime-Tests-Services": {
+      "definitions": 384,
+      "differences": 0
+    },
+    "BVC-Runtime-Tests-Kernel-Pharo": {
+      "definitions": 160,
+      "differences": 0
+    }
+  },
+  "nativeSourceVerification": {
+    "BVC-Runtime-Kernel-GemStone": {
+      "differences": 0,
+      "definitions": 133
+    },
+    "BVC-Runtime-Worker-GemStone": {
+      "differences": 0,
+      "definitions": 117
+    },
+    "BVC-Runtime-Tests-Kernel-GemStone": {
+      "differences": 0,
+      "definitions": 42
+    }
+  },
+  "retainedDevelopmentEvidence": {
+    "stoppedRuntime": "lifecycle-dev",
+    "failedQualificationArchive": "UserGlobals at: #CRRuntimeManagementQualificationFailures20261027",
+    "archivedRuntimes": [
+      "bvc_lifecycle_361ba4fbba14",
+      "bvc_lifecycle_a5e253e5d811"
+    ],
+    "archivedWorkerProcesses": "confirmed exited",
+    "controlClaims": "preserved for inspection; never replayed"
+  },
+  "limits": [
+    "Managed services use local execution with durable control inboxes; standalone persistent transactional workers retain their existing profile.",
+    "Automatic takeover after unconfirmed worker failure is disabled.",
+    "Full upstream provisioning and Rowan cold-start loading were not exercised by this incremental DevKit-stone qualification."
+  ],
+  "runtimeCommit": "2b26bff72b3dbb191496fb0dcc6f75547286f67b"
+}

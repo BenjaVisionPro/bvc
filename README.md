@@ -208,11 +208,23 @@ Launch tokens and process command identity prevent stale PID/readiness files fro
 identifying a different process. Unexpected exit, unknown state or pending cleanup requires
 inspection; the script does not force-kill the Gem.
 
-This is the backend for the planned `bvc worker start|stop|restart|status
-<runtimeIdentifier>` interface. That public interface is deferred until Runtime
-configuration lookup and persistent topology publication are ready. The current
-launcher can require a registered host binding to accepted Runtime identity,
-host and configuration version; it does not qualify a complete cross-Gem fabric.
+The public interface now manages the whole named Runtime:
+
+```sh
+bvc runtime configure development ./runtime.ston
+bvc runtime start development
+bvc runtime status development
+bvc runtime restart development
+bvc runtime stop development
+bvc runtime remove development
+```
+
+Start also accepts a configuration file. Configure leaves a stopped Runtime
+stopped; start/restart use its accepted configuration without incrementing the
+version. Runtime creates native hosts through the common planner and observes
+service publication across Gems. Commands return JSON. See
+[Runtime management](docs/runtime.md) for command semantics, native control
+delivery, failure handling and integration qualification.
 
 To load portable Connect into the same stone after Runtime:
 

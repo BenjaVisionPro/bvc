@@ -1,0 +1,113 @@
+OrderedDictionary {
+	#schemaTag : #crRuntimeConfiguration,
+	#schemaVersion : 2,
+	#runtimeVersion : nil,
+	#configuration : OrderedDictionary {
+		#class : #CRRuntimeConfiguration,
+		#identifier : #d9sluapuhkm17cjiioj8uy2g4,
+		#label : 'Runtime',
+		#version : nil,
+		#topology : OrderedDictionary {
+			#class : #CRTopologyConfiguration,
+			#label : 'Topology',
+			#identifier : #ebptvqaxq8rohxd5vsdva9n2c,
+			#hosts : OrderedCollection [
+				OrderedDictionary {
+					#class : #CRHostConfiguration,
+					#identifier : #local,
+					#label : 'Local',
+					#address : 'localhost',
+					#maxProcesses : 4,
+					#tags : OrderedCollection [ ],
+					#services : OrderedCollection [
+						#runtimeOrchestrator
+					]
+				},
+				OrderedDictionary {
+					#class : #CRHostConfiguration,
+					#identifier : #workerHost,
+					#label : 'Worker',
+					#address : 'localhost',
+					#maxProcesses : 2,
+					#tags : OrderedCollection [ ],
+					#services : OrderedCollection [
+						#probe
+					]
+				}
+			],
+			#placementStrategyConfiguration : OrderedDictionary {
+				#class : #CRRoundRobinPlacementStrategyConfiguration,
+				#identifier : #9naidik8u33mdwyqtfr3yxj8c,
+				#label : ''
+			}
+		},
+		#services : OrderedCollection [
+			OrderedDictionary {
+				#class : #CROrchestrationConfiguration,
+				#heartbeatKey : #orchestrationHeartbeat,
+				#identifier : #runtimeOrchestrator,
+				#label : 'Orchestration',
+				#heartbeatIntervalMillis : 1000,
+				#reconcileKey : #reconcileDeploymentTopology,
+				#reconcileIntervalMillis : 1000,
+				#serviceClass : OrderedDictionary {
+					#kind : #classRef,
+					#name : #CROrchestrationService
+				},
+				#deploymentAdjustmentPolicy : nil,
+				#workerStartIntentTimeoutMillis : 2000,
+				#serviceInstallIntentTimeoutMillis : 2000,
+				#workerCleanupIntentTimeoutMillis : 2000,
+				#startIntentMaxAttempts : 3,
+				#startRetryBackoffMillis : 500,
+				#installIntentMaxAttempts : 3,
+				#installRetryBackoffMillis : 500
+			},
+			OrderedDictionary {
+				#class : #CRServiceConfiguration,
+				#identifier : #probe,
+				#label : 'Lifecycle probe',
+				#serviceClass : OrderedDictionary {
+					#kind : #classRef,
+					#name : #CRRuntimeManagementProbeService
+				}
+			}
+		],
+		#deployment : OrderedDictionary {
+			#class : #CRDeploymentConfiguration,
+			#identifier : #9bfjjug7sxrq5uo8k5d4vhltu,
+			#label : 'Deployment',
+			#serviceDeployments : OrderedCollection [
+				OrderedDictionary {
+					#class : #CRServiceDeploymentConfiguration,
+					#identifier : #am327zxvumbv8h0wgymaas977,
+					#serviceIdentifier : #runtimeOrchestrator,
+					#label : 'Orchestrator',
+					#eligibleHostTags : nil,
+					#forbiddenHostTags : nil,
+					#initialCount : 1,
+					#scaleConfiguration : nil
+				},
+				OrderedDictionary {
+					#class : #CRServiceDeploymentConfiguration,
+					#identifier : #f0xv11a3z83pxj4v341pfx7xl,
+					#serviceIdentifier : #probe,
+					#label : 'Probe',
+					#eligibleHostTags : nil,
+					#forbiddenHostTags : nil,
+					#initialCount : 1,
+					#scaleConfiguration : nil
+				}
+			]
+		},
+		#failureEvidenceConfiguration : OrderedDictionary {
+			#class : #CRFailureEvidenceConfiguration,
+			#identifier : #bt0tn5suxmm53muh3c9195bxz,
+			#captureDebugArtifacts : false,
+			#label : '',
+			#ringBufferCapacity : 50,
+			#workerOverrideAssociations : OrderedCollection [ ],
+			#serviceOverrideAssociations : OrderedCollection [ ]
+		}
+	}
+}

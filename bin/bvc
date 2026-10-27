@@ -37,6 +37,10 @@ Commands:
   topaz <deploymentName> [--script FILE]
       Attach linked Topaz to an existing stone; optionally run a batch script.
 
+  runtime start|configure <runtimeName> [configurationFile]
+  runtime stop|restart|status|remove <runtimeName>
+      Manage a named Runtime in the project's configured stone.
+
   delete <deploymentName> [-f|--force]
       Delete a deployment and its associated data.
       Prompts for confirmation unless --force is provided.
@@ -74,6 +78,7 @@ case "$cmd" in
   start)          exec "${SCRIPT_DIR}/bvcStartDeployment.sh" "$@" ;;
   stop)           exec "${SCRIPT_DIR}/bvcStopDeployment.sh" "$@" ;;
   topaz)          exec "${SCRIPT_DIR}/bvcTopaz.sh" "$@" ;;
+  runtime)        exec "${SCRIPT_DIR}/bvcRuntime.sh" "$@" ;;
   delete)         exec "${SCRIPT_DIR}/bvcDeleteDeployment.sh" "$@" ;;
   help|--help|-h) print_help ;;
   *)              error_banner "Unknown command: $cmd"; print_help; exit 1 ;;

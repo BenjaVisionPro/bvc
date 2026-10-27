@@ -1,0 +1,17 @@
+run
+GsDeployer deploy: [
+ | url directory definitions names |
+ url := System gemEnvironmentVariable: 'BVC_RUNTIME_REPOSITORY'.
+ (url isNil or: [(url beginsWith: 'tonel://') not]) ifTrue: [self error: 'Set BVC_RUNTIME_REPOSITORY to verified local Runtime sources'].
+ directory := MetacelloPlatform current fileHandleOn: (url copyFrom: 'tonel://' size + 1 to: url size).
+ names := #('CRRuntimeManagementProbeService' 'CRGemStoneLifecycleSentinelWork').
+ definitions := OrderedCollection new.
+ #('BVC-Runtime-Tests-Kernel-Core' 'BVC-Runtime-Tests-Kernel-GemStone') do: [:package |
+ definitions addAll: ((TonelMCReader on: directory fileName: package) snapshot definitions select: [:definition |
+ (definition isClassDefinition or: [definition isMethodDefinition]) and: [names includes: definition className asString]])].
+ definitions size = 4 ifFalse: [self error: 'Unexpected lifecycle fixture definitions'].
+ (definitions select: [:definition | definition isClassDefinition]) do: [:definition | definition load].
+ (definitions select: [:definition | definition isMethodDefinition]) do: [:definition | definition load]].
+true
+%
+commit

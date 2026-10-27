@@ -52,5 +52,5 @@ export STONE=$stoneName
 export GEMSTONE="${stoneDir}/product"
 export PATH="${GEMSTONE}/bin:${PATH}"
 cd "$stoneDir"
-topaz -l -I "$login" -S "$recipe" < /dev/zero
+topaz -l -I "$login" -S "$recipe" < /dev/null
 exit_0_banner "Portable Runtime loaded and checked in '${stoneName}'"

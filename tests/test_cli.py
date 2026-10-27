@@ -68,6 +68,12 @@ elif name == 'stopStone.solo':
 elif name == 'deleteStone.solo':
     (root / 'running' / args[-1]).unlink(missing_ok=True)
     (root / 'registered' / args[-1]).unlink()
+elif name == 'topaz' and os.environ.get('BVC_RUNTIME_RESULT'):
+    if not os.environ.get('OMIT_RUNTIME_RESULT'):
+        pathlib.Path(os.environ['BVC_RUNTIME_RESULT']).write_text(json.dumps({
+            'name': os.environ['BVC_RUNTIME_NAME'],
+            'action': os.environ['BVC_RUNTIME_ACTION'],
+            'configuration': os.environ.get('BVC_RUNTIME_CONFIGURATION')}))
 elif name == 'curl':
     if '-fSLo' in args:
         pathlib.Path(args[args.index('-fSLo') + 1]).touch()
@@ -268,6 +274,32 @@ class CliTests(unittest.TestCase):
         alternative.write_text('## alternative user login\n')
         self.cli('topaz', 'inspect', '--script', str(script), BVC_TOPAZ_LOGIN=str(alternative))
         self.assertIn(str(alternative), self.events('topaz')[-1][1])
+
+    def test_runtime_management_dispatch_and_configuration_path(self):
+        self.cli('start', 'bvc_dev', '--with-seaside')
+        configuration = self.project / 'runtime config.ston'
+        configuration.write_text('{}')
+        for action in ('configure', 'start'):
+            result = self.cli('runtime', action, 'my-runtime', configuration.name)
+            report = json.loads(result.stdout)
+            self.assertEqual(report['action'], action)
+            self.assertEqual(report['configuration'], str(configuration))
+        for action in ('status', 'stop', 'restart', 'remove'):
+            result = self.cli('runtime', action, 'my-runtime')
+            self.assertEqual(json.loads(result.stdout)['name'], 'my-runtime')
+        self.assertFalse((self.project / 'stones/bvc_dev/.my-runtime.runtime-lock').exists())
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+
+    def test_runtime_management_rejects_bad_arguments_and_missing_results(self):
+        self.cli('runtime', 'start', 'missing', ok=False)
+        self.cli('start', 'bvc_dev', '--with-seaside')
+        self.cli('runtime', 'launch', 'probe', ok=False)
+        self.cli('runtime', 'status', 'probe', 'extra', ok=False)
+        self.cli('runtime', 'start', '../probe', ok=False)
+        self.cli('runtime', 'configure', 'probe', 'missing.ston', ok=False)
+        self.cli('runtime', 'configure', 'probe', OMIT_RUNTIME_RESULT='1', ok=False)
+        self.cli('runtime', 'start', 'probe', FAIL_COMMAND='topaz', ok=False)
+        self.assertFalse((self.project / 'stones/bvc_dev/.probe.runtime-lock').exists())
 
     def test_runtime_load_rejects_missing_or_rowan_stone(self):
         self.load_runtime('missing', ok=False)
