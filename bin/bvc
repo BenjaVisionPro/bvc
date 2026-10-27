@@ -34,6 +34,9 @@ Commands:
   stop <deploymentName>
       Stop a deployment.
 
+  topaz <deploymentName> [--script FILE]
+      Attach linked Topaz to an existing stone; optionally run a batch script.
+
   delete <deploymentName> [-f|--force]
       Delete a deployment and its associated data.
       Prompts for confirmation unless --force is provided.
@@ -70,6 +73,7 @@ case "$cmd" in
   list)           exec "${SCRIPT_DIR}/bvcListDeployments.sh" "$@" ;;
   start)          exec "${SCRIPT_DIR}/bvcStartDeployment.sh" "$@" ;;
   stop)           exec "${SCRIPT_DIR}/bvcStopDeployment.sh" "$@" ;;
+  topaz)          exec "${SCRIPT_DIR}/bvcTopaz.sh" "$@" ;;
   delete)         exec "${SCRIPT_DIR}/bvcDeleteDeployment.sh" "$@" ;;
   help|--help|-h) print_help ;;
   *)              error_banner "Unknown command: $cmd"; print_help; exit 1 ;;

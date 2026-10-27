@@ -190,6 +190,21 @@ so Gofer cannot choose an older cached checksum version. The record also retains
 the initial failure and recovery details. GemStone lifecycle synchronization,
 orchestration supervision and worker launching remain unimplemented.
 
+For native inspection and development, attach linked Topaz to an existing stone:
+
+```sh
+bvc topaz foundation-dev
+bvc topaz foundation-dev --script /absolute/path/check.topaz
+```
+
+Run from the deployment's project directory. `BVC_TOPAZ_LOGIN` selects an
+alternative login file; the default is the DevKit DataCurator login script.
+Interactive mode retains debugger stacks. Batch mode prints failures and exits
+nonzero, and neither mode commits automatically or changes stone lifecycle.
+The [gemstone-topaz agent skill](skills/gemstone-topaz/SKILL.md) documents native
+development, debugging and source-authority boundaries. Install it into the
+agent's skills directory to make it discoverable across chats.
+
 Deletion requires typing the deployment name. For an intentional unattended
 deletion, use `bvc delete <deployment> --force`.
 

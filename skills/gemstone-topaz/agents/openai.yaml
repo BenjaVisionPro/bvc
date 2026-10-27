@@ -1,0 +1,4 @@
+interface:
+  display_name: "GemStone Topaz"
+  short_description: "Develop and debug Catalyst in native GemStone"
+  default_prompt: "Use $gemstone-topaz to connect to a Catalyst stone, inspect native code and run tests."

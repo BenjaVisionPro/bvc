@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-27",
+  "stone": "bvc_foundation_portable",
+  "gemstone": "3.7.5 arm64.Darwin",
+  "cliTests": {
+    "run": 45,
+    "failures": 0
+  },
+  "native": {
+    "batchLoginAndInspection": true,
+    "batchFailureExitCode": 1,
+    "batchFailureStackPrinted": true,
+    "interactiveDebuggerStackAndFrameRetained": true,
+    "nativeTonelSnapshotRoundTrip": true
+  },
+  "skillValidation": "passed"
+}

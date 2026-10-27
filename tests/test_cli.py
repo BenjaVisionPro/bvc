@@ -49,6 +49,8 @@ elif name == 'createStone.solo':
     (d / 'system.conf').touch()
     (d / '.GDKStoneSpec.ston').write_text(
         "GDKStoneSpec { #stoneDirectorySpecName : '%s' }\n" % option('--template'))
+    (d / 'product/bin').mkdir(parents=True, exist_ok=True)
+    (d / 'product/bin/topaz').symlink_to(root / 'tools/topaz')
 elif name == 'gslist.solo':
     for p in sorted((root / 'running').iterdir()):
         print('exists 3.7.5 tester 123 456 Oct 12 10:00 Stone ' + p.name)
@@ -210,6 +212,33 @@ class CliTests(unittest.TestCase):
         self.assertIn(str(self.project / 'config/gemstone/load-portable-runtime.topaz'),
                       self.events('topaz')[0][1])
         self.assertEqual(data.read_text(), 'preserve')
+
+    def test_topaz_attaches_without_recreating_or_starting_stone(self):
+        self.cli('start', 'inspect', '--with-seaside')
+        before = list(self.events())
+        self.cli('topaz', 'inspect')
+        added = self.events()[len(before):]
+        self.assertEqual([event[0] for event in added], ['topaz'])
+        self.assertIn('-l', added[0][1])
+        self.assertNotIn('-S', added[0][1])
+
+    def test_topaz_batch_propagates_failure_and_rejects_missing_inputs(self):
+        self.cli('topaz', 'missing', ok=False)
+        self.cli('start', 'inspect', '--with-seaside')
+        self.cli('topaz', 'inspect', '--script', str(self.root / 'absent'), ok=False)
+        script = self.root / 'check.topaz'
+        script.write_text('run\n1 + 1\n%\n')
+        self.cli('topaz', 'inspect', '--script', str(script), FAIL_COMMAND='topaz', ok=False)
+        self.cli('topaz', 'inspect', '--script', str(script))
+        self.assertEqual(len(self.events('topaz')), 2)
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+        login = self.project / 'git_root/dev_tools/gt4gemstone/scripts/loginDataCurator.topaz'
+        login.unlink()
+        self.cli('topaz', 'inspect', '--script', str(script), ok=False)
+        alternative = self.root / 'login.topaz'
+        alternative.write_text('## alternative user login\n')
+        self.cli('topaz', 'inspect', '--script', str(script), BVC_TOPAZ_LOGIN=str(alternative))
+        self.assertIn(str(alternative), self.events('topaz')[-1][1])
 
     def test_runtime_load_rejects_missing_or_rowan_stone(self):
         self.load_runtime('missing', ok=False)
