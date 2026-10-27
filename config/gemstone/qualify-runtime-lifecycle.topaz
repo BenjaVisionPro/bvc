@@ -1,0 +1,25 @@
+run
+#('BVC_LIFECYCLE_PROBE_WORKER' 'BVC_LIFECYCLE_REPORT') do: [:name |
+  (System gemEnvironmentVariable: name) ifNil: [self error: 'Set ', name, ' before native lifecycle qualification']].
+true
+%
+set transactionmode manualBegin
+expectvalue true
+run
+| result selectors report file path |
+result := CRGemStoneLifecycleExamples suite run.
+(result errors isEmpty and: [result failures isEmpty]) ifFalse: [self error: result printString].
+selectors := CRGemStoneLifecycleExamples selectors select: [:selector | selector beginsWith: 'test'].
+selectors do: [:selector | CRGemStoneLifecycleExamples new perform: selector].
+CRGemStoneWorkerIntegrationFixture runInDisposableSession = #passed
+  ifFalse: [self error: 'Native transaction fixture failed'].
+report := Dictionary new at: 'sunit' put: result runCount;
+  at: 'failures' put: result failures size; at: 'errors' put: result errors size;
+  at: 'directExamples' put: selectors size; at: 'transactionFixture' put: 'passed';
+  at: 'workerHost' put: (System gemEnvironmentVariable: 'BVC_LIFECYCLE_PROBE_WORKER'); yourself.
+path := System gemEnvironmentVariable: 'BVC_LIFECYCLE_REPORT'.
+path ifNil: [self error: 'Set BVC_LIFECYCLE_REPORT to the requested validation output path'].
+file := GsFile openWriteOnServer: path.
+[file nextPutAll: (STON toJsonString: report)] ensure: [file close].
+true
+%

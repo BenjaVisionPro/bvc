@@ -171,7 +171,8 @@ bvcLoadRuntime.sh foundation-dev
 
 It loads the production manifest corresponding to the `runtime` group from the
 local CatalystRuntime checkout: five common packages and the two GemStone backend
-packages. One atomic Monticello batch reuses the stone's provisioned dependencies,
+packages. One atomic common-code batch is followed by the native adapters so
+extension overrides remain installed. Both phases reuse provisioned dependencies,
 avoiding an upstream GLASS/Announcements reload. Runtime tests, examples, UI and
 Pharo implementations are excluded. `BVC_RUNTIME_REPOSITORY` can select another
 verified local `tonel://` checkout. The helper preserves the stone and checks
@@ -179,16 +180,51 @@ that the Foundation probe survives, the GemStone platform is selected, native
 queue delivery and configuration snapshots survive reconnecting, and only the
 seven production packages are loaded. Its result is written to
 `stones/<deployment>/portable-runtime-validation.ston`. These checks qualify
-loading, queue persistence and configuration behavior; they do not establish
-Runtime topology launching or worker lifecycle support.
+loading, queue persistence and configuration behavior. Native lifecycle checks
+are recorded separately below. Existing explicitly loaded native test packages
+are preserved and excluded from the production package count.
 
 The [GemStone 3.7.5 validation](docs/validation/portable-runtime-2026-10-27.json)
 records successful loading and repeat loading in the existing Foundation stone.
 Runtime argument names and configuration snapshot copying were corrected through
 the live GT image. The helper requests each package's exact source fingerprint
 so Gofer cannot choose an older cached checksum version. The record also retains
-the initial failure and recovery details. GemStone lifecycle synchronization,
-orchestration supervision and worker launching remain unimplemented.
+the initial failure and recovery details.
+
+Registered native Runtime hosts can be operated through the internal launcher:
+
+```sh
+bvcWorkerGem.sh start runtime-dev my-worker
+bvcWorkerGem.sh status runtime-dev my-worker
+bvcWorkerGem.sh restart runtime-dev my-worker
+bvcWorkerGem.sh stop runtime-dev my-worker
+```
+
+Register and commit the host configuration in GemStone first. The launcher
+supports `CRGemStoneWorkerHost` (persistent RcQueue) and
+`CRGemStoneLocalWorkerHost` (Gem-local execution). It waits for service readiness,
+reuses a live worker, and confirms Runtime cleanup plus process exit on stop.
+Launch tokens and process command identity prevent stale PID/readiness files from
+identifying a different process. Unexpected exit, unknown state or pending cleanup requires
+inspection; the script does not force-kill the Gem.
+
+This is the backend for the planned `bvc worker start|stop|restart|status
+<runtimeIdentifier>` interface. That public interface is deferred until Runtime
+configuration lookup and persistent topology publication are ready. The current
+launcher can require a registered host binding to accepted Runtime identity,
+host and configuration version; it does not qualify a complete cross-Gem fabric.
+
+To load portable Connect into the same stone after Runtime:
+
+```sh
+bvcLoadConnect.sh runtime-dev
+```
+
+`BVC_CONNECT_REPOSITORY` selects a verified local `tonel://` checkout. The helper
+loads Core and the Gem-local defaults, then checks service installation, startup
+and cleanup through Runtime. It opens no sockets and excludes GT/UI packages.
+The [native lifecycle record](docs/validation/runtime-lifecycle-2026-10-27.json)
+contains the native SUnit/examples, source verification and load results.
 
 For native inspection and development, attach linked Topaz to an existing stone:
 

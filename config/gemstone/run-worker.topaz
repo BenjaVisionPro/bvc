@@ -1,0 +1,14 @@
+iferr 1 stk
+iferr 2 stack
+iferr 3 exit
+expecterror GemStoneError 4060
+run
+| host name |
+name := System gemEnvironmentVariable: 'BVC_WORKER_NAME'.
+host := GemServerRegistry gemServerNamed: name.
+host ifNil: [self error: 'No registered Runtime worker host: ', name].
+((host isKindOf: CRGemStoneLocalWorkerHost) or: [host isKindOf: CRGemStoneWorkerHost])
+  ifFalse: [self error: 'This runner requires a Runtime worker host'].
+host scriptStartServiceOn: host portOrResourceNameList first
+%
+exit

@@ -1,0 +1,57 @@
+expectvalue true
+run
+#(CRGemStoneLocalWorker TonelRepository CFConfiguration) do: [:name |
+  (Smalltalk includesKey: name) ifFalse: [self error: 'Missing native Runtime prerequisite: ', name asString]].
+true
+%
+
+expectvalue true
+run
+| repository url |
+url := System gemEnvironmentVariable: 'BVC_CONNECT_REPOSITORY'.
+repository := TonelRepository new directory: (MetacelloPlatform current fileHandleOn:
+  (url copyFrom: 'tonel://' size + 1 to: url size)).
+"Finish installing native defaults before the one explicit commit: Core's
+class initialization alone would retain non-persistent semaphores in class vars."
+#('BVC-Connect-Core' 'BVC-Connect-GemStone') do: [:name |
+  Gofer new repository: repository;
+    version: name, '-bvc.', (System gemEnvironmentVariable: 'BVC_FOUNDATION_SOURCE_VERSION'); load].
+CCResourceDomain initialize.
+CCReadinessProfile initialize.
+true
+%
+commit
+
+set transactionmode manualBegin
+expectvalue true
+run
+| worker config domain pool before expected loaded report file |
+before := STON toString: (UserGlobals at: #BVCFoundationPortableProbe).
+domain := CCResourceDomain default.
+pool := CCReadinessProfile sharedPool.
+System beginTransaction. System abortTransaction.
+domain == CCResourceDomain default ifFalse: [self error: 'Connect accounting domain did not remain Gem-local'].
+pool == CCReadinessProfile sharedPool ifFalse: [self error: 'Connect readiness pool did not remain Gem-local'].
+worker := CRGemStoneLocalWorker new.
+worker configureIdentifier: #connectLoadProbe hostIdentifier: #nativeGem.
+config := CCConnectServiceConfiguration new.
+worker serviceConfigurations: {config}.
+worker installConfiguredServices.
+[worker startServicesForRunLoop] ensure: [worker stopAndUninstallServices
+  ifFalse: [self error: 'Connect service cleanup remains pending']].
+(STON toString: (UserGlobals at: #BVCFoundationPortableProbe)) = before
+  ifFalse: [self error: 'Foundation probe changed during Connect load'].
+loaded := MCWorkingCopy allManagers select: [:manager |
+  (manager package name beginsWith: 'BVC-Connect-') and: [(manager package name beginsWith: 'BVC-Connect-Tests') not]]
+  thenCollect: [:manager | manager package name].
+expected := #('BVC-Connect-Core' 'BVC-Connect-GemStone').
+loaded asSet = expected asSet ifFalse: [self error: 'Unexpected Connect production package selection'].
+report := Dictionary new at: 'stone' put: (System gemEnvironmentVariable: 'STONE');
+  at: 'packages' put: loaded asSortedCollection asArray;
+  at: 'foundationPreserved' put: true; at: 'gemLocalDefaults' put: true;
+  at: 'runtimeServiceLifecycle' put: true; at: 'socketServicesConfigured' put: false;
+  at: 'gtUIAndExamplesRequested' put: false; yourself.
+file := GsFile openWriteOnServer: (System gemEnvironmentVariable: 'BVC_CONNECT_REPORT').
+[file nextPutAll: (STON toJsonString: report)] ensure: [file close].
+true
+%

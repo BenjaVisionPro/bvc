@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-27",
+  "status": "passed-registered-runtime-lifecycle",
+  "stone": "bvc_foundation_portable",
+  "gemstone": "3.7.5 arm64.Darwin",
+  "runtimeCommit": "204707b0ab3f21decb68de02c5676ecdf91c9dbd",
+  "connectCommit": "c2c19680e3c2713c3e11d9c7b6e6d151c5692741",
+  "nativeLifecycle": {
+    "persistentHost": {
+      "sunit": 7,
+      "failures": 0,
+      "errors": 0,
+      "directExamples": 7,
+      "transactionFixture": "passed",
+      "workerHost": "bvc_runtime_persistent"
+    },
+    "localHost": {
+      "sunit": 7,
+      "failures": 0,
+      "errors": 0,
+      "directExamples": 7,
+      "transactionFixture": "passed",
+      "workerHost": "bvc_runtime_lifecycle"
+    },
+    "runtimeConstructionAndShutdown": true,
+    "supervisorProcessJoin": true,
+    "sessionLocalStateAcrossAbort": true,
+    "callerTransactionPreserved": true,
+    "unboundRuntimeLaunchRejected": true,
+    "sourceReload": "passed; common packages precede native extensions",
+    "foundationQueueAndConfigurationPersistence": "passed"
+  },
+  "nativeSourceVerification": {
+    "BVC-Runtime-Worker-GemStone": {
+      "classAndMethodDifferences": 0,
+      "organizationDifferences": 0
+    },
+    "BVC-Runtime-Tests-Kernel-GemStone": {
+      "classAndMethodDifferences": 0,
+      "organizationDifferences": 0
+    },
+    "BVC-Runtime-Kernel-GemStone": {
+      "classAndMethodDifferences": 0,
+      "organizationDifferences": 0
+    },
+    "BVC-Connect-GemStone": {
+      "classAndMethodDifferences": 0,
+      "organizationDifferences": 1
+    }
+  },
+  "portableConnect": {
+    "runtimeServiceLifecycle": true,
+    "gemLocalDefaults": true,
+    "stone": "bvc_foundation_portable",
+    "foundationPreserved": true,
+    "packages": [
+      "BVC-Connect-Core",
+      "BVC-Connect-GemStone"
+    ],
+    "socketServicesConfigured": false,
+    "gtUIAndExamplesRequested": false
+  },
+  "gtConnectPortabilityExamples": 161,
+  "cliChecks": {
+    "fullSuite": 50,
+    "failures": 0,
+    "additionalConnectLoaderRetryTest": 1,
+    "additionalUnexpectedExitGuardTest": 1
+  },
+  "topaz": {
+    "batchLoginAndFailurePropagation": "passed",
+    "interactiveStackFrameAndObjectInspection": "passed",
+    "nativeCompilationAndExport": "passed",
+    "skill": "gemstone-topaz",
+    "remoteDebugger": "RPC Topaz client faulted in GciDebugStartDebugService on 3.7.5 arm64; remote attachment remains unqualified"
+  },
+  "loadOrder": "Common Runtime code first, native adapters second; exact fingerprint versions; reuse provisioned prerequisites",
+  "scope": "Runtime lifecycle; socket implementation excluded at user request",
+  "limits": [
+    "Registered-host lifecycle is qualified; automatic configuration-driven host creation and full cross-Gem Runtime topology publication/fencing remain unqualified.",
+    "OS process/readiness observations do not establish authoritative persistent worker ownership; providesAuthoritativeWorkerLiveness remains false.",
+    "Multiple producer Gems, production crash/recovery qualification and unknown native commit outcomes remain further work.",
+    "Socket implementation was excluded at the user request."
+  ],
+  "launchFailurePolicy": "Unexpected exit, unknown process state and pending cleanup require inspection before restart; normal stop confirms Runtime cleanup and process exit."
+}

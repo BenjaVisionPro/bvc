@@ -20,12 +20,16 @@ GsDeployer deploy: [
   repository := TonelRepository new directory: (MetacelloPlatform current fileHandleOn:
     (sourceUrl copyFrom: 'tonel://' size + 1 to: sourceUrl size)).
   gofer := Gofer new repository: repository.
-  "The runtime group's production manifest is loaded in one Monticello batch.
+  "Load the common manifest atomically, then install native extension overrides.
+  Mixing both phases in one loader can let common methods replace native ones.
   Reuse provisioned prerequisites rather than reloading GLASS/Announcements.
   Select the exact source fingerprint: checksums do not sort chronologically."
-  #('BVC-Runtime-Announcements' 'BVC-Runtime-Worker-Core'
-    'BVC-Runtime-Worker-GemStone' 'BVC-Runtime-Services'
-    'BVC-Runtime-Kernel-Core' 'BVC-Runtime-Kernel-GemStone' 'BVC-Runtime-Configuration')
+  #('BVC-Runtime-Announcements' 'BVC-Runtime-Worker-Core' 'BVC-Runtime-Services'
+    'BVC-Runtime-Kernel-Core' 'BVC-Runtime-Configuration')
+    do: [:name | gofer version: name, '-bvc.', (System gemEnvironmentVariable: 'BVC_FOUNDATION_SOURCE_VERSION')].
+  gofer load.
+  gofer := Gofer new repository: repository.
+  #('BVC-Runtime-Worker-GemStone' 'BVC-Runtime-Kernel-GemStone')
     do: [:name | gofer version: name, '-bvc.', (System gemEnvironmentVariable: 'BVC_FOUNDATION_SOURCE_VERSION')].
   gofer load ].
 true
@@ -51,7 +55,8 @@ envelope := CRWorkUnitEnvelope onWorkUnit: CRWorkUnit new.
 queue enqueue: envelope.
 queue depth = 1 ifFalse: [self error: 'Native queue did not retain the envelope'].
 loaded := MCWorkingCopy allManagers
-  select: [:manager | manager package name beginsWith: 'BVC-Runtime-']
+  select: [:manager | (manager package name beginsWith: 'BVC-Runtime-')
+    and: [(manager package name beginsWith: 'BVC-Runtime-Tests-') not]]
   thenCollect: [:manager | manager package name].
 expected := #('BVC-Runtime-Announcements' 'BVC-Runtime-Worker-Core'
   'BVC-Runtime-Worker-GemStone' 'BVC-Runtime-Services'

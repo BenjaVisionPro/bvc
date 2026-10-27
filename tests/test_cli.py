@@ -222,6 +222,35 @@ class CliTests(unittest.TestCase):
         self.assertIn('-l', added[0][1])
         self.assertNotIn('-S', added[0][1])
 
+    def test_connect_incremental_load_releases_lock_after_success_and_failure(self):
+        self.cli('start', 'connect-dev', '--with-seaside')
+        sources = self.root / 'connect-sources'
+        sources.mkdir()
+        (sources / 'fixture.st').write_text('Connect source fixture')
+        command = [str(REPO / 'bin/bvcLoadConnect.sh'), 'connect-dev']
+        env = dict(self.env, BVC_CONNECT_REPOSITORY='tonel://' + str(sources))
+        for fail in (False, True, False):
+            attempt = dict(env, FAIL_COMMAND='topaz') if fail else env
+            result = subprocess.run(command, cwd=self.project, env=attempt,
+                                    text=True, capture_output=True, timeout=30)
+            self.assertEqual(result.returncode == 0, not fail, result.stdout + result.stderr)
+            self.assertFalse((self.project / 'stones/.connect-dev.bvc-lock').exists())
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+
+    def test_worker_unexpected_exit_requires_inspection_before_restart(self):
+        self.cli('start', 'runtime-dev', '--with-seaside')
+        directory = self.project / 'stones/runtime-dev/workers/probe'
+        directory.mkdir(parents=True)
+        (directory / 'launch.json').write_text(json.dumps({'pid': 2, 'token': 'old'}))
+        (directory / 'state.json').write_text(json.dumps({'pid': 2, 'token': 'old', 'state': 'running'}))
+        for action in ('start', 'stop', 'restart'):
+            result = subprocess.run([str(REPO / 'bin/bvcWorkerGem.sh'), action, 'runtime-dev', 'probe'],
+                                    cwd=self.project, env=self.env, text=True,
+                                    capture_output=True, timeout=30)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.events('topaz'), [])
+        self.assertEqual(json.loads((directory / 'state.json').read_text())['token'], 'old')
+
     def test_topaz_batch_propagates_failure_and_rejects_missing_inputs(self):
         self.cli('topaz', 'missing', ok=False)
         self.cli('start', 'inspect', '--with-seaside')

@@ -27,6 +27,9 @@ login="${BVC_TOPAZ_LOGIN:-${projectsRoot}/dev_tools/gt4gemstone/scripts/loginDat
 login=$(abs_from_cwd "$login")
 [ -s "$login" ] || exit_1_banner "Missing Topaz login file: ${login}; set BVC_TOPAZ_LOGIN"
 export STONE=$stoneName
+export BVC_PROJECT_DIRECTORY="$PWD"
+export BVC_WORKER_GEM_SCRIPT="${SCRIPT_DIR}/bvcWorkerGem.sh"
+export BVC_DEPLOYMENT_NAME=$stoneName
 export PATH="${GEMSTONE}/bin:${PATH}"
 cd "$stoneDir"
 if [ -z "$script" ]; then
