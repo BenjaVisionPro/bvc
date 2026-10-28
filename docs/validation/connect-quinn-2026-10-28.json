@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-28",
+  "loader": {
+    "nativeBufferRoundtrip": true,
+    "stone": "bvc_foundation_portable",
+    "runtimeConfigurationRoundtrip": true,
+    "packages": [
+      "BVC-Connect-Quic-Configuration",
+      "BVC-Connect-Quic-Core",
+      "BVC-Connect-Quic-GemStone"
+    ],
+    "socketServicesConfigured": false,
+    "gtUIAndExamplesRequested": false
+  },
+  "nativeContractTests": {
+    "runs": 9,
+    "details": [],
+    "errors": 0,
+    "failures": 0
+  },
+  "cliTests": {
+    "runs": 54,
+    "failures": 0
+  },
+  "managedConnect": {
+    "configuredWithoutStarting": true,
+    "requestsBeforeRestart": 10,
+    "requestsAfterRestart": 10,
+    "liveGemsReplaced": true,
+    "acceptedVersionRetained": true,
+    "positiveStopAndRemoval": true
+  },
+  "GreaseAndSpartaTouched": false
+}

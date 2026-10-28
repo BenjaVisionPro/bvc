@@ -69,3 +69,22 @@ python3 /absolute/path/bvc/tests/runtime_lifecycle_native.py \
 ```
 
 This preparation loads four fixture definitions and no GT UI/examples package.
+
+## Quinn Connect service
+
+The incremental `bin/bvcLoadConnect.sh <deployment>` recipe now selects
+`BVC-Connect-Quic-Core`, `BVC-Connect-Quic-GemStone`, and
+`BVC-Connect-Quic-Configuration`, reusing provisioned prerequisites. It verifies
+native buffer ownership and Runtime configuration serialization without starting
+a listener. Replace an older project-local `config/gemstone/load-portable-connect.topaz`
+override with the current recipe when upgrading; project overrides take precedence.
+The previous TCP/DTLS packages are retired.
+
+Build Connect's Rust library for the Gem host and generate the complete Runtime
+file with [Connect's configuration renderer](https://github.com/BenjaVisionPro/CatalystConnect/blob/main/scripts/runtime-configuration.py).
+The file selects a QUIC service, absolute native library and identity paths,
+trusted peer certificate, principal, operation allowlist and application class.
+Use the ordinary configure/start/status/restart/stop/remove commands above. The
+library is immutable once loaded: gracefully stop and restart the Gem to change
+its native build. See [Connect](https://github.com/BenjaVisionPro/CatalystConnect)
+for the wire/security boundary and current qualification limits.
