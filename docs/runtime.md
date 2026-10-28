@@ -40,11 +40,14 @@ Runtime activations are reconstructed per Gem. Native host creation follows the
 common Runtime planner. GemServer registration and configuration bindings commit
 before launching a Gem. GsDevKit_stones continues to own stone lifecycle.
 
-Each managed local worker has an RcQueue control inbox. A claimed control delivery
-remains visible until local execution completes and acknowledgement commits.
+Runtime uses `CRGemStoneWorkerHost` and the default `CRGemStoneWorker` for
+configured workers. Each WorkUnit declares its transaction requirement. Durable
+transactional work commits dequeue, nested body outcome, acknowledgement and
+completion evidence together. Nontransactional control work retains the existing
+RcQueue claim/acknowledgement boundary and executes outside repository transactions.
+Local schedules and reconciliation triggers remain in the activation-local queue.
 An interrupted or uncertain delivery requires inspection; it is never silently
-replayed. This does not provide transactional delivery for arbitrary local
-application work. Persistent transactional workers retain their existing profile.
+replayed. No execution profile selection is added to configuration.
 Old ownership and activation generations are checked on submission, consumption
 and publication. Automatic takeover after an unconfirmed worker failure remains
 disabled; inspect the worker log and delivery before recovery.

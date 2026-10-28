@@ -59,12 +59,17 @@ configuration version. Status returns JSON with process and published service
 evidence. See [Runtime management](../../../docs/runtime.md).
 
 The internal worker launcher remains `bvcWorkerGem.sh start|stop|restart|status
-<deployment> <registered-host>`. Runtime creates/commits managed local hosts from
-configuration before launching Gems, using common orchestration and a durable
-control inbox. Topology publication is data-only and generation-fenced. Uncertain
-claims and failed activations require inspection; do not delete their evidence
-or automatically replay work. The standalone persistent host remains a separate
-transactional execution profile.
+<deployment> <registered-host>`. Runtime creates and commits its default
+`CRGemStoneWorkerHost` from configuration before launch, using common orchestration,
+existing routing and published evidence. Its `CRGemStoneWorker` honors per-WorkUnit
+transaction declarations: transactional deliveries commit body, acknowledgement
+and evidence together; nontransactional control work uses the existing committed
+claim protocol outside repository transactions. Schedules and triggers stay local
+to the activation. There is no standalone worker or configuration profile selector.
+Topology publication remains data-only and generation-fenced. Uncertain claims
+and failed activations require inspection; do not delete their evidence or replay
+work automatically. Leave the Connect local/managed-worker harness unchanged.
+
 
 `CRGemStoneLifecycleExamples` lives in `BVC-Runtime-Tests-Kernel-GemStone`; the transaction fixture also needs `BVC-Runtime-Tests-Worker-GemStone`. With those explicitly loaded, set `BVC_LIFECYCLE_PROBE_WORKER` to the authorized test host and `BVC_LIFECYCLE_REPORT` to its output path, then use `bvc topaz <deployment> --script <bvc>/config/gemstone/qualify-runtime-lifecycle.topaz`. It starts/stops the named Gem and runs a disposable transaction fixture; use a dedicated session.
 
