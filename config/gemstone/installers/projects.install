@@ -15,6 +15,10 @@ install_projects() {
   installProject.stone "file:${gitDir}/CatalystRuntime/rowan/specs/CatalystRuntime.ston" \
     --projectsHome="${gitDir}" || return
 
+  information_banner "Installing Catalyst Users"
+  installProject.stone "file:${gitDir}/catalyst-users/rowan/specs/CatalystUsers.ston" \
+    --alias=catalyst-users --projectsHome="${gitDir}" || return
+
   information_banner "Installing Catalyst Process"
   installProject.stone "file:${gitDir}/CatalystProcess/rowan/specs/CatalystProcess.ston" \
     --projectsHome="${gitDir}" || return

@@ -75,6 +75,13 @@ Metacello new
 	baseline: 'CatalystRuntime';
 	load.
 
+"Users Runtime service and portable examples share the installed Runtime backend."
+Metacello new
+	repository: projectsRoot, '/catalyst-users/src';
+	baseline: 'CatalystUsers';
+	onConflictUseLoaded;
+	load: #('tests').
+
 Metacello new
 	repository: projectsRoot, '/CatalystConnect/src';
 	baseline: 'CatalystConnect';

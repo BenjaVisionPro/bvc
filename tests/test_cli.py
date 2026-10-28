@@ -538,7 +538,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(self.installed_projects(), [
             'RemoteServiceReplication', 'RowanClientServices', 'Sparkle',
             'gtoolkit-wireencoding', 'gt4gemstone', 'gtoolkit-remote',
-            'CatalystFoundation', 'CatalystRuntime', 'CatalystProcess'])
+            'CatalystFoundation', 'CatalystRuntime', 'CatalystUsers', 'CatalystProcess'])
         for _, args in self.events('installProject.stone'):
             self.assertNotIn('-D', args)
             self.assertNotIn('--debug', args)
@@ -568,6 +568,27 @@ class CliTests(unittest.TestCase):
         self.assertFalse(marker.exists())
         self.assertEqual(self.installed_projects().count('gt4gemstone'), 1)
         self.assertEqual(self.installed_projects().count('CatalystRuntime'), 2)
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+
+    def test_users_failure_stops_and_retry_preserves_existing_stone(self):
+        self.use_bundled_installers()
+        self.cli('start', 'production', FAIL_PROJECT='CatalystUsers', ok=False)
+        marker = self.project / 'stones/.production.bvc-installing'
+        self.assertEqual(marker.read_text().strip(), 'rowan:devtools')
+        self.assertEqual(self.installed_projects()[-1], 'CatalystUsers')
+        self.assertNotIn('CatalystProcess', self.installed_projects())
+        users_call = self.events('installProject.stone')[-1][1]
+        self.assertEqual(users_call[0], 'file:' + str(
+            self.project / 'git_root/projects/catalyst-users/rowan/specs/CatalystUsers.ston'))
+        self.assertIn('--alias=catalyst-users', users_call)
+        data = self.project / 'stones/production/user-data'
+        data.write_text('preserve Users application data')
+        self.cli('start', 'production')
+        self.assertFalse(marker.exists())
+        self.assertEqual(data.read_text(), 'preserve Users application data')
+        self.assertEqual(self.installed_projects().count('CatalystUsers'), 2)
+        self.assertEqual(self.installed_projects()[-1], 'CatalystProcess')
+        self.assertEqual(self.installed_projects().count('gt4gemstone'), 1)
         self.assertEqual(len(self.events('createStone.solo')), 1)
 
     def test_legacy_empty_marker_resumes_after_stone_start(self):

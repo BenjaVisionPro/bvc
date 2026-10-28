@@ -115,7 +115,7 @@ production machine. Starting an existing deployment preserves its data. Repeated
 start/stop commands reuse completed installation steps.
 
 New GemStone deployments use the `default_rowan3` template. The Rowan installer
-loads the developer tools, then Catalyst Foundation, Runtime and Process through
+loads the developer tools, then Catalyst Foundation, Runtime, Users and Process through
 their Rowan specifications. Project-specific hooks in
 `config/gemstone/installers/dev_tools.install` and `projects.install` can override
 the bundled recipes. The Runtime recipe expects its prerequisites to be
@@ -303,6 +303,13 @@ local SpartaSkia/Bloc checkout paths and a local Font Awesome metadata path;
 provide a project loader at `config/gt/startup_scripts/loadProjects.st` or adjust
 those dependencies for the build machine. Runtime downloads and repository
 branches are not yet locked to reproducible revisions.
+
+The bundled project set checks out `BenjaVision-Catalyst/catalyst-users` under
+`catalyst-users`. After Runtime, GT loads the `CatalystUsers` baseline's `tests`
+group, including the Users service and portable examples. The GemStone Rowan
+installer loads the production `CatalystUsers.ston` specification from that same
+checkout. Project-specific project sets or loader overrides must include Users
+explicitly if they replace these bundled files.
 
 The bundled project set uses `catalyst-groups` as the checkout directory for
 `BenjaVision-Catalyst/catalyst-groups`. The GT loader loads the `CatalystGroups`
