@@ -1,0 +1,160 @@
+{
+  "date": "2026-10-28",
+  "stone": "bvc_foundation_portable",
+  "freshStone": {
+    "stonePid": 9898,
+    "runtimeRegistryAbsent": true,
+    "cpu": "arm64",
+    "stone": "bvc_foundation_portable",
+    "os": "Darwin",
+    "gemstone": "3.7.5",
+    "classes": [
+      [
+        "CFConfiguration",
+        true
+      ],
+      [
+        "GemServer",
+        true
+      ],
+      [
+        "TonelMCReader",
+        true
+      ],
+      [
+        "CRRuntime",
+        false
+      ],
+      [
+        "CCQuicService",
+        false
+      ],
+      [
+        "CCConnectServiceConfiguration",
+        false
+      ],
+      [
+        "CRRuntimeRegistry",
+        false
+      ]
+    ]
+  },
+  "gtRebuiltByUser": true,
+  "gtImage": "/opt/TestNewBVC/SuperGame/devkit/SuperGame.image",
+  "sources": {
+    "Foundation": "139460b38439f097983aee94e8a898b8da244bdc",
+    "Runtime": "f30070ec96d45fc16c0881c198e2d22481f2311a",
+    "Connect": "37a4f58531b5991c447768366fe241f18e2465f8"
+  },
+  "productionLoads": {
+    "runtime": {
+      "group": "runtime",
+      "configurationSnapshotAndPersistence": true,
+      "gemstonePlatform": true,
+      "packages": [
+        "BVC-Runtime-Announcements",
+        "BVC-Runtime-Configuration",
+        "BVC-Runtime-Configuration-Magritte",
+        "BVC-Runtime-Kernel-Core",
+        "BVC-Runtime-Kernel-GemStone",
+        "BVC-Runtime-Services",
+        "BVC-Runtime-Worker-Core",
+        "BVC-Runtime-Worker-GemStone"
+      ],
+      "foundationPreserved": true,
+      "stone": "bvc_foundation_portable",
+      "uiAndExamplesExcluded": true,
+      "nativeQueueDeliveryAndPersistence": true
+    },
+    "foundation": {
+      "uiExamplesExcluded": true,
+      "group": "foundation-portable",
+      "magritte": "8d1fd386365b223d3f25c70d7d913d73075f545b",
+      "stone": "bvc_foundation_portable",
+      "validationRejectsInvalidValue": true,
+      "identity": true,
+      "reconnectPersistence": true,
+      "configurationRoundTrip": true,
+      "descriptionDiscovery": true
+    }
+  },
+  "connectLoad": {
+    "nativeBufferRoundtrip": true,
+    "stone": "bvc_foundation_portable",
+    "runtimeConfigurationRoundtrip": true,
+    "packages": [
+      "BVC-Connect-Quic-Configuration",
+      "BVC-Connect-Quic-Core",
+      "BVC-Connect-Quic-GemStone"
+    ],
+    "socketServicesConfigured": false,
+    "gtUIAndExamplesRequested": false
+  },
+  "sourceProof": [
+    "unionDefinitions",
+    164,
+    0,
+    0
+  ],
+  "nativeTests": {
+    "passed": 7,
+    "failed": 0
+  },
+  "interop": {
+    "runs": 2,
+    "casesPerRun": 4,
+    "requestsPerCase": 10,
+    "totalVerifiedRequests": 80,
+    "directions": [
+      "GT client to GemStone server",
+      "GemStone client to GT server",
+      "GT client to managed GemStone server",
+      "GT client to restarted managed GemStone server"
+    ],
+    "bodyBytes": [
+      0,
+      8,
+      256,
+      1024,
+      4080
+    ],
+    "operations": [
+      "copy",
+      "XOR90"
+    ],
+    "callBudget": 32,
+    "bodyCopyBudget": 4096,
+    "claimCapacity": 4,
+    "positiveTemporaryOwnerCleanup": true,
+    "allGtLeasesReleasedAndJoined": true,
+    "defaultRuntimeRemovalVerified": true
+  },
+  "leftRunning": {
+    "runtime": "connect-dev",
+    "address": "127.0.0.1:64613",
+    "configurationVersion": 1,
+    "liveGems": 2,
+    "application": "CCQuicEchoApplication; operations 1 and 2"
+  },
+  "preservation": {
+    "runtimeAndConnectImageSourceUnchanged": true,
+    "greaseAndSpartaSourceEdited": false,
+    "protectedGtRepositoryHeadsAndReferencesUnchanged": true,
+    "freshStoneNativeGreaseDependencyProvisionedNormally": true,
+    "credentialsAndPrivateKeysExcludedFromCommittedEvidence": true
+  },
+  "oldStone": {
+    "oldStonePidObserved": 93152,
+    "deletedBeforeCreation": true,
+    "failedProbeCleanupWasNotPretendedSuccessful": true,
+    "failedProbeHadNoLiveWorkers": true,
+    "oldWorkerEvidenceArchivedLocally": "/opt/git/BenjaVisionPro/catalyst-workspace/recovery/connect-fresh-stone-interop-20261028/old-worker-evidence"
+  },
+  "runnerSha256": "3d70698f142cb04165233fc122e888e39456365563539fb1c2af0e93db23e6bd",
+  "fixtureSha256": "f2ea98aca138eaee2b06f33844a0872c0f2de41241082d5684de2b781a019b08",
+  "qualificationLimits": [
+    "macOS ARM64 execution only; Linux ARM64 remains separate",
+    "bvc Seaside/Metacello native bootstrap; no direct Rowan execution claim",
+    "copy/XOR development handler; no peak-throughput or complete CATP feature-parity claim"
+  ]
+}

@@ -88,3 +88,39 @@ Use the ordinary configure/start/status/restart/stop/remove commands above. The
 library is immutable once loaded: gracefully stop and restart the Gem to change
 its native build. See [Connect](https://github.com/BenjaVisionPro/CatalystConnect)
 for the wire/security boundary and current qualification limits.
+
+## Native GT/GemStone interoperability
+
+After rebuilding GT and loading Foundation, Runtime and Quinn Connect into a
+native stone, run the opt-in qualification with the new immutable native library:
+
+```sh
+python3 /absolute/path/bvc/tests/connect_interop_native.py \
+  --project /absolute/path/project \
+  --deployment development \
+  --connect /absolute/path/CatalystConnect \
+  --library /absolute/path/connect-build/release/libcatalyst_connect.dylib \
+  --output /absolute/path/new-qualification-directory
+```
+
+Use `libcatalyst_connect.so` on Linux. The identity tool must be beside the library
+(as produced by Connect's build script). The output directory must be new. GT must
+already have `CCQuicNativeExamples`, `CCNativeInteropRun` and `CCNativeMcpLease`
+loaded; the runner does not alter image source. If GT already bound a Connect
+library, pass that same immutable path. Keep private identity files in the output
+directory out of source control.
+
+Each run verifies copy and XOR at 0, 8, 256, 1024 and 4080 bytes: GT client to a
+native GemStone server, GemStone client to a GT server, and GT client to a managed
+server before and after restart. It checks payloads, admission/copy/call bounds,
+process separation, positive native cleanup, unchanged Runtime identity/version,
+and replacement of live Gems on restart. GT operations use the MCP lease; the
+controller waits on the filesystem completion marker before joining.
+
+By default the generated named Runtime is stopped and removed. To retain a
+localhost development server, add `--runtime-name connect-dev --keep-runtime`.
+An already registered name is rejected. The final `interop-evidence.json` records
+the listening address and accepted configuration. That handler supports copy/XOR
+only; higher-level CATP protocols remain separate work. On a failure, inspect the
+retained logs and owner markers before retrying. No owner is killed and no MCP
+server is reset by this runner.

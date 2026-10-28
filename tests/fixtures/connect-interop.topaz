@@ -1,0 +1,27 @@
+expectvalue true
+run
+| worker service cfg file options watch started deadline sent replies current expected lengths report result ready directory stopFile role |
+System abortTransaction. System transactionMode: #manualBegin.
+directory := System gemEnvironmentVariable: 'BVC_CONNECT_INTEROP_DIRECTORY'. role := System gemEnvironmentVariable: 'BVC_CONNECT_INTEROP_ROLE'. stopFile := directory, '/stop'.
+file := GsFile openReadOnServer: directory, '/gs-options.json'. [options := file contents] ensure: [file close].
+cfg := CCQuicConfiguration new identifier: #connect; label: 'Interop'; nativeOptionsJson: options; libraryPath: (System gemEnvironmentVariable: 'BVC_CONNECT_INTEROP_LIBRARY'); allowedOperations: #(1 2); principal: 'gt'; yourself.
+worker := CRGemStoneLocalWorker new configureIdentifier: #connectInterop hostIdentifier: #gemstone; yourself.
+service := worker services installServiceClass: CCQuicService serviceIdentifier: #connect configuration: cfg.
+lengths := #(0 8 256 1024 4080). sent := 0. replies := 0. current := nil. ready := false. started := worker clock currentMillis. deadline := started + 30000.
+watch := CRRepeatingSchedule workUnitFactory: [
+ (ready not and: [((service status at: #statistics) at: #nativePhase) = 1]) ifTrue: [
+ file := GsFile openWriteOnServer: directory, '/gs-ready.json'. [file nextPutAll: (STON toJsonString: (Dictionary new at: 'port' put: ((service status at: #statistics) at: #port); at: 'pid' put: (System gemVersionReport at: 'processId'); yourself))] ensure: [file close]. ready := true].
+ current ifNotNil: [current isFinished ifTrue: [current isSuccessful ifFalse: [self error: 'Remote operation failed']. current value = expected ifFalse: [self error: 'Reply bytes differ']. replies := replies + 1. current := nil]].
+ (role = 'client' and: [current isNil and: [sent < 10 and: [ready]]]) ifTrue: [| bytes code length |
+ length := lengths at: (sent rem: lengths size) + 1. code := sent < 5 ifTrue: [1] ifFalse: [2]. bytes := ByteArray new: length.
+ 1 to: length do: [:index | bytes at: index put: (index rem: 251)]. expected := bytes copy.
+ code = 2 ifTrue: [1 to: length do: [:index | expected at: index put: ((expected at: index) bitXor: 90)]].
+ current := service requestOperation: code body: bytes. sent := sent + 1].
+ ((role = 'client' and: [replies = 10]) or: [(GsFile existsOnServer: stopFile) or: [worker clock currentMillis >= deadline]]) ifTrue: [CRStopWorker new] ifFalse: [CRIdleWorkUnit new]] key: #connectInterop intervalMillis: 1 scheduledMillis: started.
+worker scheduler addRuntimeSchedule: watch.
+[worker start] ensure: [worker status = CRStatus stopped ifFalse: [worker stop. [worker stopAndUninstallServices] whileFalse: [worker isWorkQueueEmpty ifFalse: [worker runNextWorkCycle]. Delay waitForMilliseconds: 1]]].
+worker scheduler removeSchedule: watch.
+report := Dictionary new at: 'role' put: role; at: 'pid' put: (System gemVersionReport at: 'processId'); at: 'replies' put: replies; at: 'service' put: service status; at: 'workerStopped' put: (worker status = CRStatus stopped); at: 'queueEmpty' put: worker isWorkQueueEmpty; at: 'failures' put: (worker workerHandle failedWorkUnitExecutions asArray collect: [:failure | {failure workUnitClassName. failure errorClassName. failure errorMessage. failure stackSummary}]); yourself.
+file := GsFile openWriteOnServer: directory, '/gs-evidence.json'. [file nextPutAll: (STON toJsonString: report)] ensure: [file close].
+result := worker status = CRStatus stopped and: [(role = 'server' or: [replies = 10]) and: [(service status at: #buffersReleased) and: [worker isWorkQueueEmpty and: [worker workerHandle failedWorkUnitExecutions isEmpty]]]]. result
+%

@@ -4,7 +4,7 @@
 
 `bvc topaz` reads normal ENV > project config > toolkit defaults. It uses `stones/<deployment>/product/bin/topaz -l`, sets GEMSTONE and STONE, and loads `git_root/dev_tools/gt4gemstone/scripts/loginDataCurator.topaz`. Set BVC_TOPAZ_LOGIN to an existing alternative login file for other users or installations. Keep credentials out of tracked skills and scripts.
 
-The current experimental project is `/opt/git/BenjaVisionPro/catalyst-workspace/recovery/bvc-seaside-20261027/experiment`; the existing stone is `bvc_foundation_portable`, GemStone 3.7.5 arm64.Darwin. Foundation/Magritte and seven portable Runtime packages are loaded. Its config selects registry `bvc_foundation_trial` and STONES_DATA_HOME under the sibling `registry-data` directory. These are development-session facts, not universal defaults. Check current project files and stone state before assuming they still exist. Do not substitute the similarly named incomplete `bvc_foundation_dev` stone.
+The current experimental project is `/opt/git/BenjaVisionPro/catalyst-workspace/recovery/bvc-seaside-20261027/experiment`; the stone is `bvc_foundation_portable`, GemStone 3.7.5 arm64.Darwin. It was recreated from scratch on 2026-10-28, then loaded with Foundation/Magritte, eight Runtime production packages and the three Quinn Connect production/configuration packages. Its config selects registry `bvc_foundation_trial` and STONES_DATA_HOME under the sibling `registry-data` directory. The named Runtime `connect-dev` was left running with the development copy/XOR handler; read `bvc runtime status connect-dev` before using it. These are session facts, not universal defaults. Check current project files and stone state before assuming they still apply. Do not substitute the similarly named incomplete `bvc_foundation_dev` stone.
 
 For a basic inspection script:
 
@@ -68,6 +68,30 @@ transactional execution profile.
 
 `CRGemStoneLifecycleExamples` lives in `BVC-Runtime-Tests-Kernel-GemStone`; the transaction fixture also needs `BVC-Runtime-Tests-Worker-GemStone`. With those explicitly loaded, set `BVC_LIFECYCLE_PROBE_WORKER` to the authorized test host and `BVC_LIFECYCLE_REPORT` to its output path, then use `bvc topaz <deployment> --script <bvc>/config/gemstone/qualify-runtime-lifecycle.topaz`. It starts/stops the named Gem and runs a disposable transaction fixture; use a dedicated session.
 
-The temporary development hosts are `bvc_runtime_persistent` and `bvc_runtime_lifecycle`; check their current registration and state rather than assuming they exist in another checkout or stone.
+The previous stone's `bvc_runtime_persistent` and `bvc_runtime_lifecycle` hosts were removed with that stone. Current managed hosts are generated from the named Runtime; discover them with `bvc runtime status connect-dev` rather than reusing old host names or generation tokens.
 
 Operate these Runtime hosts through `CRGemStoneWorkerLauncher` / `bvcWorkerGem.sh`; upstream GemServer start/stop wrappers have different transaction/process ownership. Native logout error 4060 is expected by the worker runner after lifecycle cleanup; it is not itself proof of successful cleanup. Check the token-bound state and process exit.
+
+
+## Rebuilt GT / fresh stone interoperability
+
+The opt-in runner `tests/connect_interop_native.py` uses the compiled Connect
+helpers already present in GT and the production classes already loaded in the
+stone. It performs native copy/XOR in both directions, then tests a bvc-managed
+server before and after restart. Read [the runner instructions](../../../docs/runtime.md#native-gtgemstone-interoperability)
+for inputs and the choice to leave a development Runtime running. It does not
+provision/delete stones or load/replace Smalltalk source.
+
+Use a fresh output directory. The runner creates private localhost identities,
+one independent GT Runtime owner per case and a unique global owner name recorded
+in each case's `owner.json`. It waits outside GT for the released/restored
+`gt-mcp-gate.json` before joining; never bypass the lease or reset MCP to inspect
+an active run. Stop files request graceful local fixture shutdown. An unknown
+outcome retains logs/markers for inspection rather than killing a Gem or replaying
+application work. The default removes only its newly created test Runtime;
+`--keep-runtime` deliberately retains the configured server. Existing Runtime
+names are rejected.
+
+Fresh-stone evidence is recorded in the workspace at
+`Connect/evidence/fresh-stone-interop-2026-10-28.json`. The rebuilt GT's Runtime and
+Connect source remained unchanged throughout this qualification.
