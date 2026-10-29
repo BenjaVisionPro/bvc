@@ -1,7 +1,13 @@
 # Temporary Metacello route. Rowan deployment installers are separate.
 install_seaside_projects() {
   local recipe
+  export BVC_SIMULATOR_SOURCE="${BVC_SIMULATOR_SOURCE:-${gitDir_projects}/catalyst-simulator/src}"
+  export BVC_SIMULATOR_REPORT="${BVC_SIMULATOR_REPORT:-${stoneDir}/portable-simulator-validation.ston}"
+  [ -d "$BVC_SIMULATOR_SOURCE" ] || { error_banner "Missing Simulator sources: ${BVC_SIMULATOR_SOURCE}"; return 1; }
   recipe=$(conf_resolve 'gemstone/load-portable-foundation.topaz')
+  topaz -l -I "${gitDir_devtools}/gt4gemstone/scripts/loginDataCurator.topaz" \
+    -S "$recipe" < /dev/zero || return
+  recipe=$(conf_resolve 'gemstone/load-portable-simulator.topaz')
   topaz -l -I "${gitDir_devtools}/gt4gemstone/scripts/loginDataCurator.topaz" \
     -S "$recipe" < /dev/zero
 }

@@ -32,6 +32,12 @@ GDKProjectSet {
 				'origin' : 'git@github.com:BenjaVisionPro/CatalystRuntime.git'
 			}
 		},
+		'catalyst-simulator' : {
+			'revision' : 'main',
+			'gitUrls' : {
+				'origin' : 'git@github.com:BenjaVision-Catalyst/catalyst-simulator.git'
+			}
+		},
 		'catalyst-users' : {
 			'revision' : 'main',
 			'gitUrls' : {

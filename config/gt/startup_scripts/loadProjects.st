@@ -70,6 +70,14 @@ Metacello new
 	onConflictUseLoaded;
 	load.
 
+"Portable simulation kernel and its GT/GemStone conformance models.
+Core has no Runtime or ecosystem dependency; tests are development-only."
+Metacello new
+	repository: projectsRoot, '/catalyst-simulator/src';
+	baseline: 'CatalystSimulator';
+	onConflictUseLoaded;
+	load: #('Tests').
+
 Metacello new
 	repository: projectsRoot, '/CatalystRuntime/src';
 	baseline: 'CatalystRuntime';

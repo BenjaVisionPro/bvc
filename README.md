@@ -115,7 +115,8 @@ production machine. Starting an existing deployment preserves its data. Repeated
 start/stop commands reuse completed installation steps.
 
 New GemStone deployments use the `default_rowan3` template. The Rowan installer
-loads the developer tools, then Catalyst Foundation, Runtime, Users and Process through
+loads the developer tools, then Catalyst Foundation, Simulator Core, Runtime,
+Users and Process through
 their Rowan specifications. Project-specific hooks in
 `config/gemstone/installers/dev_tools.install` and `projects.install` can override
 the bundled recipes. The Runtime recipe expects its prerequisites to be
@@ -132,14 +133,20 @@ bvc build --with-seaside
 This creates a `default_seaside` stone, installs Seaside and GT GemStone support,
 then uses Metacello to load Magritte and Foundation's `foundation-portable` group.
 The group contains the shared model and configuration packages, excluding GT UI
-and the mixed UI examples package. Runtime and Process are not loaded by this
-temporary recipe. The default deployment path continues to use Rowan.
+and the mixed UI examples package. Simulator Core loads next from the local
+`catalyst-simulator/src` export, using the installed Tonel reader. Runtime and
+Process are not loaded by this temporary recipe. The default deployment path
+continues to use Rowan.
 
 The portable recipe bootstraps a pinned GemStone Tonel reader and declares a
 pinned GemStone Magritte dependency in Foundation's baseline. It checks identity,
 description discovery, invalid-value rejection, configuration serialization and
 persistence after reconnecting. A successful load writes
 `stones/<deployment>/portable-foundation-validation.ston`.
+Simulator's source-definition comparison, graph movement and checkpoint
+continuation checks write `stones/<deployment>/portable-simulator-validation.ston`.
+Set `BVC_SIMULATOR_SOURCE` or `BVC_SIMULATOR_REPORT` to override those defaults.
+Simulator tests are optional and are not loaded by either GemStone installer.
 The recorded [GemStone 3.7.5 validation](docs/validation/seaside-foundation-2026-10-27.json)
 also includes the CLI and GT regression results. It qualifies portable loading;
 the upstream Tonel port's optional Cypress writer and GemStone source export
@@ -310,6 +317,17 @@ group, including the Users service and portable examples. The GemStone Rowan
 installer loads the production `CatalystUsers.ston` specification from that same
 checkout. Project-specific project sets or loader overrides must include Users
 explicitly if they replace these bundled files.
+
+The project set also checks out `BenjaVision-Catalyst/catalyst-simulator` under
+`catalyst-simulator`. GT loads baseline `CatalystSimulator`, group `Tests`, before
+Runtime; this includes Core and both portable conformance suites. The Rowan
+installer loads `rowan/specs/CatalystSimulatorCore.ston` with alias
+`catalyst-simulator` after Foundation. The temporary Seaside installer likewise
+loads Core after Foundation, with a local graph/checkpoint smoke check. Full
+GT/GemStone conformance and fresh-build qualification remain separate steps.
+Existing project-specific project sets and startup/installer overrides must be
+updated explicitly; bundled changes do not replace them or reload completed
+deployments. Use the updated toolkit checkout when rebuilding.
 
 The bundled project set uses `catalyst-groups` as the checkout directory for
 `BenjaVision-Catalyst/catalyst-groups`. The GT loader loads the `CatalystGroups`

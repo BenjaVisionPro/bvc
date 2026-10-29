@@ -22,6 +22,14 @@ with (root / 'events').open('a') as f:
     f.write(json.dumps([name, args]) + '\n')
 if os.environ.get('FAIL_COMMAND') == name:
     sys.exit(42)
+if name == 'topaz':
+    scripts = [pathlib.Path(a).name for a in args if a.endswith('.topaz')]
+    if 'load-portable-simulator.topaz' in scripts:
+        (root / 'simulator-environment').write_text(json.dumps({
+            'source': os.environ['BVC_SIMULATOR_SOURCE'],
+            'report': os.environ['BVC_SIMULATOR_REPORT']}))
+    if os.environ.get('FAIL_TOPAZ_SCRIPT') in scripts:
+        sys.exit(44)
 if name == 'installProject.stone' and os.environ.get('FAIL_PROJECT'):
     if args[0].endswith('/' + os.environ['FAIL_PROJECT'] + '.ston'):
         sys.exit(43)
@@ -538,7 +546,8 @@ class CliTests(unittest.TestCase):
         self.assertEqual(self.installed_projects(), [
             'RemoteServiceReplication', 'RowanClientServices', 'Sparkle',
             'gtoolkit-wireencoding', 'gt4gemstone', 'gtoolkit-remote',
-            'CatalystFoundation', 'CatalystRuntime', 'CatalystUsers', 'CatalystProcess'])
+            'CatalystFoundation', 'CatalystSimulatorCore', 'CatalystRuntime',
+            'CatalystUsers', 'CatalystProcess'])
         for _, args in self.events('installProject.stone'):
             self.assertNotIn('-D', args)
             self.assertNotIn('--debug', args)
@@ -589,6 +598,78 @@ class CliTests(unittest.TestCase):
         self.assertEqual(self.installed_projects().count('CatalystUsers'), 2)
         self.assertEqual(self.installed_projects()[-1], 'CatalystProcess')
         self.assertEqual(self.installed_projects().count('gt4gemstone'), 1)
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+
+    def test_simulator_rowan_failure_stops_and_retry_preserves_stone(self):
+        self.use_bundled_installers()
+        self.cli('start', 'production', FAIL_PROJECT='CatalystSimulatorCore', ok=False)
+        marker = self.project / 'stones/.production.bvc-installing'
+        self.assertEqual(marker.read_text().strip(), 'rowan:devtools')
+        self.assertEqual(self.installed_projects()[-1], 'CatalystSimulatorCore')
+        self.assertNotIn('CatalystRuntime', self.installed_projects())
+        simulator_call = self.events('installProject.stone')[-1][1]
+        self.assertEqual(simulator_call[0], 'file:' + str(
+            self.project / 'git_root/projects/catalyst-simulator/rowan/specs/CatalystSimulatorCore.ston'))
+        self.assertIn('--alias=catalyst-simulator', simulator_call)
+        data = self.project / 'stones/production/user-data'
+        data.write_text('preserve simulation data')
+        self.cli('start', 'production')
+        self.assertFalse(marker.exists())
+        self.assertEqual(data.read_text(), 'preserve simulation data')
+        self.assertEqual(self.installed_projects().count('CatalystSimulatorCore'), 2)
+        self.assertEqual(self.installed_projects().count('gt4gemstone'), 1)
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+
+    def use_bundled_seaside_projects(self):
+        (self.project / 'config/gemstone/installers/seaside_projects.install').unlink()
+        sources = self.project / 'git_root/projects/catalyst-simulator/src'
+        sources.mkdir(parents=True)
+
+    def topaz_recipes(self):
+        return [Path(args[args.index('-S') + 1]).name
+                for _, args in self.events('topaz')]
+
+    def test_bundled_seaside_projects_load_foundation_then_simulator_core(self):
+        self.use_bundled_seaside_projects()
+        self.cli('start', 'sim-dev', '--with-seaside')
+        self.assertEqual(self.topaz_recipes(), [
+            'load-portable-foundation.topaz', 'load-portable-simulator.topaz'])
+        env = json.loads((self.root / 'simulator-environment').read_text())
+        self.assertEqual(env['source'], str(
+            self.project / 'git_root/projects/catalyst-simulator/src'))
+        self.assertEqual(env['report'], str(
+            self.project / 'stones/sim-dev/portable-simulator-validation.ston'))
+
+    def test_seaside_project_recipe_failure_is_retryable_without_recreation(self):
+        self.use_bundled_seaside_projects()
+        marker = self.project / 'stones/.sim-dev.bvc-installing'
+        for recipe in ('load-portable-foundation.topaz', 'load-portable-simulator.topaz'):
+            with self.subTest(recipe=recipe):
+                before = len(self.events('topaz'))
+                self.cli('start', 'sim-dev', '--with-seaside',
+                         FAIL_TOPAZ_SCRIPT=recipe, ok=False)
+                self.assertEqual(marker.read_text().strip(), 'seaside:devtools')
+                added = self.topaz_recipes()[before:]
+                self.assertEqual(added, ['load-portable-foundation.topaz'] +
+                                 (['load-portable-simulator.topaz']
+                                  if recipe == 'load-portable-simulator.topaz' else []))
+        data = self.project / 'stones/sim-dev/user-data'
+        data.write_text('preserve simulation data')
+        self.cli('start', 'sim-dev', '--with-seaside')
+        self.assertFalse(marker.exists())
+        self.assertEqual(data.read_text(), 'preserve simulation data')
+        self.assertEqual(len(self.events('createStone.solo')), 1)
+        self.assertEqual(len(self.events('testInstallSeasideTools')), 6)
+
+    def test_seaside_missing_simulator_sources_stops_before_project_loads(self):
+        (self.project / 'config/gemstone/installers/seaside_projects.install').unlink()
+        self.cli('start', 'sim-dev', '--with-seaside', ok=False)
+        self.assertEqual(self.events('topaz'), [])
+        marker = self.project / 'stones/.sim-dev.bvc-installing'
+        self.assertEqual(marker.read_text().strip(), 'seaside:devtools')
+        (self.project / 'git_root/projects/catalyst-simulator/src').mkdir(parents=True)
+        self.cli('start', 'sim-dev', '--with-seaside')
+        self.assertFalse(marker.exists())
         self.assertEqual(len(self.events('createStone.solo')), 1)
 
     def test_legacy_empty_marker_resumes_after_stone_start(self):

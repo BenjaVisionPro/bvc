@@ -11,6 +11,10 @@ install_projects() {
   installProject.stone "file:${gitDir}/CatalystFoundation/rowan/specs/CatalystFoundation.ston" \
     --projectsHome="${gitDir}" || return
 
+  information_banner "Installing Catalyst Simulator Core"
+  installProject.stone "file:${gitDir}/catalyst-simulator/rowan/specs/CatalystSimulatorCore.ston" \
+    --alias=catalyst-simulator --projectsHome="${gitDir}" || return
+
   information_banner "Installing Catalyst Runtime"
   installProject.stone "file:${gitDir}/CatalystRuntime/rowan/specs/CatalystRuntime.ston" \
     --projectsHome="${gitDir}" || return

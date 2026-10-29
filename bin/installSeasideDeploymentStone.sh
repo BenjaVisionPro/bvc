@@ -105,4 +105,4 @@ step dictionary gt seaside_gt
 step gt devtools seaside_patches
 step devtools projects install_seaside_projects
 rm -f "$installState"
-exit_0_banner "Seaside DevKit '${stoneName}' and portable Foundation are ready"
+exit_0_banner "Seaside DevKit '${stoneName}', portable Foundation and Simulator Core are ready"
