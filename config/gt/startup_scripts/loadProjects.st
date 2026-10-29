@@ -88,7 +88,7 @@ Metacello new
 	repository: projectsRoot, '/catalyst-users/src';
 	baseline: 'CatalystUsers';
 	onConflictUseLoaded;
-	load: #('tests').
+	load: #('tests' 'tests-connect').
 
 Metacello new
 	repository: projectsRoot, '/CatalystConnect/src';
