@@ -52,6 +52,37 @@ Old ownership and activation generations are checked on submission, consumption
 and publication. Automatic takeover after an unconfirmed worker failure remains
 disabled; inspect the worker log and delivery before recovery.
 
+### Reviewed process exit
+
+A fatal completion-recording error invalidates the worker's transaction backend.
+The worker then refuses service cleanup in that unsafe Gem and can leave native
+state `cleanupPending` even after the process exits. Stop deliberately refuses
+to treat that as graceful cleanup.
+
+After preserving and reviewing the logs, launch identity, publication and delivery
+state, a dedicated `bvc topaz` session can record an explicit exit review through
+the Runtime. Pass the process observation captured during that inspection:
+
+```smalltalk
+runtime confirmExitedWorker: workerIdentifier
+    process: inspectedProcessObservation
+    reason: 'Inspection findings and preserved evidence location'.
+```
+
+This requires a fenced, stopping or stopped Runtime, confirmed exit of all its
+Gems, the same inspected PID and launch token, a matching host generation, and
+an empty queue with no claimed delivery for the reviewed worker. It refuses a
+caller-owned transaction. A matching review is idempotent; it never executes,
+acknowledges or restarts work.
+
+Then use the ordinary `bvc runtime stop <name>`. Status reports effective process
+state `stopped`, retains the original `nativeState`, and includes
+`cleanupResolution.kind = reviewedProcessExit`. The stopped worker publication
+retains the original process observation, publication, reconciliation state,
+reason and review time in its `nativeExitReview` statistics. Native launch and
+state files are unchanged. Retaining the stopped Runtime preserves this evidence;
+remove remains a separate explicit operation.
+
 The integration test `tests/runtime_lifecycle_native.py` is opt-in and requires a
 provisioned development stone and a configuration containing an orchestrator and
 a socket-free probe service on different hosts. It tests real Gems and fresh
