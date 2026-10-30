@@ -27,7 +27,8 @@ if name == 'topaz':
     if 'load-portable-simulator.topaz' in scripts:
         (root / 'simulator-environment').write_text(json.dumps({
             'source': os.environ['BVC_SIMULATOR_SOURCE'],
-            'report': os.environ['BVC_SIMULATOR_REPORT']}))
+            'report': os.environ['BVC_SIMULATOR_REPORT'],
+            'runtime': os.environ.get('BVC_SIMULATOR_LOAD_RUNTIME')}))
     if os.environ.get('FAIL_TOPAZ_SCRIPT') in scripts:
         sys.exit(44)
 if name == 'installProject.stone' and os.environ.get('FAIL_PROJECT'):
@@ -629,30 +630,32 @@ class CliTests(unittest.TestCase):
         return [Path(args[args.index('-S') + 1]).name
                 for _, args in self.events('topaz')]
 
-    def test_bundled_seaside_projects_load_foundation_then_simulator_core(self):
+    def test_bundled_seaside_projects_load_foundation_runtime_and_simulator(self):
         self.use_bundled_seaside_projects()
         self.cli('start', 'sim-dev', '--with-seaside')
         self.assertEqual(self.topaz_recipes(), [
-            'load-portable-foundation.topaz', 'load-portable-simulator.topaz'])
+            'load-portable-foundation.topaz', 'load-portable-runtime.topaz',
+            'load-portable-simulator.topaz'])
         env = json.loads((self.root / 'simulator-environment').read_text())
         self.assertEqual(env['source'], str(
             self.project / 'git_root/projects/catalyst-simulator/src'))
         self.assertEqual(env['report'], str(
             self.project / 'stones/sim-dev/portable-simulator-validation.ston'))
+        self.assertEqual(env['runtime'], '1')
 
     def test_seaside_project_recipe_failure_is_retryable_without_recreation(self):
         self.use_bundled_seaside_projects()
         marker = self.project / 'stones/.sim-dev.bvc-installing'
-        for recipe in ('load-portable-foundation.topaz', 'load-portable-simulator.topaz'):
+        recipes = ['load-portable-foundation.topaz', 'load-portable-runtime.topaz',
+                   'load-portable-simulator.topaz']
+        for recipe in recipes:
             with self.subTest(recipe=recipe):
                 before = len(self.events('topaz'))
                 self.cli('start', 'sim-dev', '--with-seaside',
                          FAIL_TOPAZ_SCRIPT=recipe, ok=False)
                 self.assertEqual(marker.read_text().strip(), 'seaside:devtools')
                 added = self.topaz_recipes()[before:]
-                self.assertEqual(added, ['load-portable-foundation.topaz'] +
-                                 (['load-portable-simulator.topaz']
-                                  if recipe == 'load-portable-simulator.topaz' else []))
+                self.assertEqual(added, recipes[:recipes.index(recipe) + 1])
         data = self.project / 'stones/sim-dev/user-data'
         data.write_text('preserve simulation data')
         self.cli('start', 'sim-dev', '--with-seaside')

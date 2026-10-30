@@ -70,18 +70,18 @@ Metacello new
 	onConflictUseLoaded;
 	load.
 
-"Portable simulation kernel and its GT/GemStone conformance models.
+Metacello new
+	repository: projectsRoot, '/CatalystRuntime/src';
+	baseline: 'CatalystRuntime';
+	load.
+
+"Simulation service, portable authority and development conformance models.
 Core has no Runtime or ecosystem dependency; tests are development-only."
 Metacello new
 	repository: projectsRoot, '/catalyst-simulator/src';
 	baseline: 'CatalystSimulator';
 	onConflictUseLoaded;
-	load: #('Tests').
-
-Metacello new
-	repository: projectsRoot, '/CatalystRuntime/src';
-	baseline: 'CatalystRuntime';
-	load.
+	load: #('RuntimeTests').
 
 "Users Runtime service and portable examples share the installed Runtime backend."
 Metacello new
@@ -111,3 +111,4 @@ Metacello new
 	load: #('Development').
 
 2 seconds wait
+t

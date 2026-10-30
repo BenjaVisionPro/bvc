@@ -6,14 +6,19 @@ iferr 3 exit
 ## Load unchanged GT exports directly: the old Gofer adapter expects version metadata.
 expectvalue true
 run
-| source |
+| source packages |
 source := System gemEnvironmentVariable: 'BVC_SIMULATOR_SOURCE'.
 source isNil ifTrue: [self error: 'BVC_SIMULATOR_SOURCE is required'].
 #(TonelMCReader BaselineOf GsDeployer) do: [:name |
  (Smalltalk includesKey: name) ifFalse: [self error: 'Missing Simulator prerequisite: ', name asString]].
+packages := #('BaselineOfCatalystSimulator' 'BVC-Simulator-Core').
+(System gemEnvironmentVariable: 'BVC_SIMULATOR_LOAD_RUNTIME') = '1' ifTrue: [
+ #(CRWorkerService CRServiceBoundCapability CRGemStoneTransactionBackend) do: [:name |
+  (Smalltalk includesKey: name) ifFalse: [self error: 'Load native Runtime before Simulator Runtime']].
+ packages := packages, #('BVC-Simulator-Authority' 'BVC-Simulator-Runtime')].
 GsDeployer deploy: [| directory definitions pending ready |
  directory := MetacelloPlatform current fileHandleOn: source.
- #('BaselineOfCatalystSimulator' 'BVC-Simulator-Core') do: [:package |
+ packages do: [:package |
   definitions := (TonelMCReader on: directory fileName: package) snapshot definitions reject: [:d | d isOrganizationDefinition].
   pending := (definitions select: [:d | d isClassDefinition]) asOrderedCollection.
   [pending notEmpty] whileTrue: [
@@ -27,10 +32,13 @@ commit
 
 expectvalue true
 run
-| directory proofs expected actual builder model backend restored checkpoint entity report file |
+| directory packages proofs expected actual builder model backend restored checkpoint entity report file |
 directory := MetacelloPlatform current fileHandleOn: (System gemEnvironmentVariable: 'BVC_SIMULATOR_SOURCE').
 proofs := OrderedCollection new.
-#('BaselineOfCatalystSimulator' 'BVC-Simulator-Core') do: [:package |
+packages := #('BaselineOfCatalystSimulator' 'BVC-Simulator-Core').
+(System gemEnvironmentVariable: 'BVC_SIMULATOR_LOAD_RUNTIME') = '1' ifTrue: [
+ packages := packages, #('BVC-Simulator-Authority' 'BVC-Simulator-Runtime')].
+packages do: [:package |
  expected := (TonelMCReader on: directory fileName: package) snapshot definitions reject: [:d | d isOrganizationDefinition].
  actual := (MCPackage named: package) snapshot definitions reject: [:d | d isOrganizationDefinition].
  (expected size = actual size and: [expected allSatisfy: [:d | actual includes: d]]) ifFalse: [self error: 'Simulator source mismatch: ', package].
@@ -52,8 +60,8 @@ backend checkpoint = restored checkpoint ifFalse: [self error: 'Simulator graph 
 (backend snapshot at: 'modelDigest') = model digest ifFalse: [self error: 'Simulator model digest mismatch'].
 report := Dictionary new
  at: 'stone' put: (System gemEnvironmentVariable: 'STONE');
- at: 'group' put: 'simulator-core';
- at: 'packages' put: #('BaselineOfCatalystSimulator' 'BVC-Simulator-Core');
+ at: 'group' put: (packages size = 2 ifTrue: ['simulator-core'] ifFalse: ['simulator-runtime']);
+ at: 'packages' put: packages;
  at: 'sourceDefinitions' put: proofs asArray;
  at: 'modelDigest' put: model digest;
  at: 'graphMovement' put: true;
